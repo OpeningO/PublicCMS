@@ -137,7 +137,8 @@ CREATE TABLE `cms_content` (
   KEY `cms_content_check_date` (`check_date`,`update_date`),
   KEY `cms_content_scores` (`scores`,`comments`,`clicks`),
   KEY `cms_content_only_url` (`only_url`,`has_images`,`has_files`,`user_id`),
-  KEY `cms_content_status` (`site_id`,`status`,`category_id`,`disabled`,`model_id`,`parent_id`,`sort`,`publish_date`,`expiry_date`)
+  KEY `cms_content_status` (`site_id`,`status`,`category_id`,`disabled`,`model_id`,`parent_id`,`sort`,`publish_date`,`expiry_date`),
+  KEY `cms_content_quote_content_id` (`site_id`, `quote_content_id`)
 ) COMMENT='内容';
 
 -- ----------------------------
@@ -383,7 +384,7 @@ CREATE TABLE `log_login` (
   `channel` varchar(50) NOT NULL COMMENT '登录渠道',
   `result` tinyint(1) NOT NULL COMMENT '结果',
   `create_date` datetime NOT NULL COMMENT '创建日期',
-  `error_password` varchar(100) default NULL COMMENT '错误密码',
+  `error_password` varchar(255) default NULL COMMENT '错误密码',
   PRIMARY KEY  (`id`),
   KEY `log_login_result` (`result`),
   KEY `log_login_user_id` (`user_id`),
@@ -461,7 +462,61 @@ CREATE TABLE `log_upload` (
   KEY `log_upload_file_size` (`file_size`)
 ) COMMENT='上传日志';
 
+-- ----------------------------
+-- Table structure for log_visit
+-- ----------------------------
+DROP TABLE IF EXISTS `log_visit`;
+CREATE TABLE `log_visit` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
+  `site_id` smallint(6) NOT NULL COMMENT '站点ID',
+  `session_id` varchar(50) NOT NULL COMMENT '会话ID',
+  `visit_date` date NOT NULL COMMENT '访问日期',
+  `visit_hour` tinyint(4) NOT NULL COMMENT '访问小时',
+  `ip` varchar(130) NOT NULL COMMENT 'IP',
+  `user_agent` varchar(500) DEFAULT NULL COMMENT 'User Agent',
+  `url` varchar(2048) NOT NULL COMMENT '访问路径',
+  `title` varchar(255) DEFAULT NULL COMMENT '标题',
+  `screen_width` int(11) DEFAULT NULL COMMENT '屏幕宽度',
+  `screen_height` int(11) DEFAULT NULL COMMENT '屏幕高度',
+  `referer_url` varchar(2048) DEFAULT NULL COMMENT '来源URL',
+  `item_type` varchar(50) DEFAULT NULL COMMENT '项目类型',
+  `item_id` varchar(50) DEFAULT NULL COMMENT '项目ID',
+  `create_date` datetime NOT NULL COMMENT '创建日期',
+  PRIMARY KEY (`id`),
+  KEY `log_visit_visit_date` (`site_id`,`visit_date`,`visit_hour`),
+  KEY `log_visit_session_id` (`site_id`,`session_id`,`visit_date`,`create_date`,`ip`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COMMENT='访问日志';
 
+-- ----------------------------
+-- Table structure for log_visit_day
+-- ----------------------------
+DROP TABLE IF EXISTS `log_visit_day`;
+CREATE TABLE `log_visit_day` (
+  `site_id` smallint(6) NOT NULL COMMENT '站点ID',
+  `visit_date` date NOT NULL COMMENT '日期',
+  `visit_hour` tinyint(4) NOT NULL COMMENT '小时',
+  `pv` bigint(20) NOT NULL COMMENT 'Page Views',
+  `uv` bigint(20) DEFAULT NULL COMMENT 'User Views',
+  `ipviews` bigint(20) DEFAULT NULL COMMENT 'IP数',
+  PRIMARY KEY (`site_id`,`visit_date`,`visit_hour`),
+  KEY `log_visit_session_id` (`site_id`,`visit_date`)
+) COMMENT = '访问汇总';
+
+-- ----------------------------
+-- Table structure for log_visit_session
+-- ----------------------------
+DROP TABLE IF EXISTS `log_visit_session`;
+CREATE TABLE `log_visit_session` (
+  `site_id` smallint(6) NOT NULL COMMENT '站点ID',
+  `session_id` varchar(50) NOT NULL COMMENT '会话ID',
+  `visit_date` date NOT NULL COMMENT '日期',
+  `last_visit_date` datetime DEFAULT NULL COMMENT '上次访问日期',
+  `first_visit_date` datetime DEFAULT NULL COMMENT '首次访问日期',
+  `ip` varchar(130) NOT NULL COMMENT 'IP',
+  `pv` bigint(20) NOT NULL COMMENT 'PV',
+  PRIMARY KEY (`site_id`,`session_id`,`visit_date`),
+  KEY `log_visit_visit_date` (`site_id`,`visit_date`,`ip`)
+) COMMENT = '访问会话';
 -- ----------------------------
 -- Table structure for trade_account
 -- ----------------------------
@@ -472,7 +527,7 @@ CREATE TABLE `trade_account`  (
   `amount` decimal(10, 2) NOT NULL COMMENT '金额',
   `update_date` datetime NULL DEFAULT NULL COMMENT '更新日期',
   PRIMARY KEY (`id`),
-  KEY `trade_account_site_id`(`site_id`, `update_date`) 
+  KEY `trade_account_site_id`(`site_id`, `update_date`)
 ) COMMENT = '资金账户';
 
 -- ----------------------------
@@ -594,7 +649,7 @@ CREATE TABLE `sys_app_client` (
   `disabled` tinyint(1) NOT NULL COMMENT '是否禁用',
   PRIMARY KEY (`id`),
   UNIQUE KEY `sys_app_client_site_id` (`site_id`,`channel`,`uuid`),
-  KEY `sys_app_client_user_id` (`user_id`,`disabled`,`create_date`) 
+  KEY `sys_app_client_user_id` (`user_id`,`disabled`,`create_date`)
 ) COMMENT='应用客户端';
 
 -- ----------------------------
@@ -680,7 +735,7 @@ DROP TABLE IF EXISTS `sys_dept_config`;
 CREATE TABLE `sys_dept_config` (
   `dept_id` int(11) NOT NULL COMMENT '部门ID',
   `config` varchar(100) NOT NULL COMMENT '配置',
-  PRIMARY KEY (`dept_id`,`config`) 
+  PRIMARY KEY (`dept_id`,`config`)
 ) COMMENT='部门配置';
 
 -- ----------------------------
@@ -827,7 +882,7 @@ INSERT INTO `sys_module` VALUES ('content_list', 'cmsContent/list', 'sysUser/loo
 INSERT INTO `sys_module` VALUES ('content_menu', NULL, NULL, 'icon-book', 'content', 1, 0);
 INSERT INTO `sys_module` VALUES ('content_move', 'cmsContent/moveParameters', 'cmsContent/move', '', 'content_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('content_publish', NULL, 'cmsContent/publish', '', 'content_list', 0, 0);
-INSERT INTO `sys_module` VALUES ('content_push', 'cmsContent/push', 'cmsContent/push_content,cmsContent/push_content_list,cmsContent/push_to_content,cmsContent/push_page,cmsContent/push_page_list,cmsPlace/add,cmsPlace/save,cmsContent/related,cmsContent/unrelated,cmsPlace/delete', '', 'content_list', 0, 0);
+INSERT INTO `sys_module` VALUES ('content_push', 'cmsContent/push', 'cmsContent/push_content,cmsContent/push_content_list,cmsContent/push_to_content,cmsContent/push_page,cmsContent/push_page_list,cmsPlace/add,cmsPlace/save,cmsContent/related,cmsContent/unrelated,cmsPlace/delete,cmsPlace/push', '', 'content_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('content_recycle_delete', NULL, 'cmsContent/realDelete', NULL, 'content_recycle_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('content_recycle_list', 'cmsRecycleContent/list', 'sysUser/lookup', 'icon-trash', 'content_menu', 1, 6);
 INSERT INTO `sys_module` VALUES ('content_recycle_recycle', NULL, 'cmsContent/recycle', NULL, 'content_recycle_list', 0, 0);
@@ -868,6 +923,9 @@ INSERT INTO `sys_module` VALUES ('log_task', 'log/task', 'sysUser/lookup', 'icon
 INSERT INTO `sys_module` VALUES ('log_task_delete', NULL, 'logTask/delete', NULL, 'log_task', 0, 0);
 INSERT INTO `sys_module` VALUES ('log_task_view', 'log/taskView', NULL, NULL, 'log_task', 0, 0);
 INSERT INTO `sys_module` VALUES ('log_upload', 'log/upload', 'sysUser/lookup', 'icon-list-alt', 'log_menu', 1, 1);
+INSERT INTO `sys_module` VALUES ('log_visit', 'log/visit', 'log/visitView', 'icon-bolt', 'log_menu', 1, 5);
+INSERT INTO `sys_module` VALUES ('log_visit_day', 'log/visitDay', NULL, 'icon-calendar', 'log_menu', 1, 7);
+INSERT INTO `sys_module` VALUES ('log_visit_session', 'log/visitSession', NULL, 'icon-comment-alt', 'log_menu', 1, 6);
 INSERT INTO `sys_module` VALUES ('maintenance', NULL, NULL, 'icon-cogs', NULL, 1, 6);
 INSERT INTO `sys_module` VALUES ('model_add', 'cmsModel/add', 'cmsModel/save,cmsTemplate/lookup', NULL, 'model_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('model_delete', NULL, 'cmsModel/delete', NULL, 'model_list', 0, 0);
@@ -1246,6 +1304,15 @@ INSERT INTO `sys_module_lang` VALUES ('log_task_view', 'zh', '查看');
 INSERT INTO `sys_module_lang` VALUES ('log_upload', 'en', 'Upload log');
 INSERT INTO `sys_module_lang` VALUES ('log_upload', 'ja', 'ファイルアップロードログ');
 INSERT INTO `sys_module_lang` VALUES ('log_upload', 'zh', '文件上传日志');
+INSERT INTO `sys_module_lang` VALUES ('log_visit', 'en', 'Visit log');
+INSERT INTO `sys_module_lang` VALUES ('log_visit', 'ja', 'アクセスログ');
+INSERT INTO `sys_module_lang` VALUES ('log_visit', 'zh', '访问日志');
+INSERT INTO `sys_module_lang` VALUES ('log_visit_day', 'en', 'Daily visit log');
+INSERT INTO `sys_module_lang` VALUES ('log_visit_day', 'ja', '毎日の訪問ログ');
+INSERT INTO `sys_module_lang` VALUES ('log_visit_day', 'zh', '日访问日志');
+INSERT INTO `sys_module_lang` VALUES ('log_visit_session', 'en', 'Visit session');
+INSERT INTO `sys_module_lang` VALUES ('log_visit_session', 'ja', 'アクセスセッション');
+INSERT INTO `sys_module_lang` VALUES ('log_visit_session', 'zh', '访问日志会话');
 INSERT INTO `sys_module_lang` VALUES ('maintenance', 'en', 'Maintain');
 INSERT INTO `sys_module_lang` VALUES ('maintenance', 'ja', '維持');
 INSERT INTO `sys_module_lang` VALUES ('maintenance', 'zh', '维护');
@@ -1654,7 +1721,7 @@ CREATE TABLE `sys_task` (
   KEY `sys_task_status` (`status`),
   KEY `sys_task_site_id` (`site_id`),
   KEY `sys_task_update_date` (`update_date`)
-) AUTO_INCREMENT=8 COMMENT='任务计划';
+) COMMENT='任务计划';
 
 -- ----------------------------
 -- Table structure for sys_user
@@ -1693,7 +1760,7 @@ CREATE TABLE `sys_user` (
 -- ----------------------------
 -- Records of sys_user
 -- ----------------------------
-INSERT INTO `sys_user` VALUES ('1', '1', 'admin', '21232f297a57a5a743894a0e4a801fc3', NULL, 1, 'admin', '1', '1', '1', 'master@sanluan.com', '0', '1', '0', '2019-01-01 00:00:00', '127.0.0.1', '0', '2019-01-01 00:00:00');
+INSERT INTO `sys_user` VALUES ('1', '1', 'admin', '2134b56595c73a647716b0a8e33f9d50243fb1c1a088597ba5aa6d9ccadacbd8fc8307bda2adfc8362abe611420bd48263bdcfd91c1c26566ad3a29d79cffd9c', '0123456789', 1, 'admin', '1', '1', '1', 'master@sanluan.com', '0', '1', '0', '2019-01-01 00:00:00', '127.0.0.1', '0', '2019-01-01 00:00:00');
 
 
 -- ----------------------------

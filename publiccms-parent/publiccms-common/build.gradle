@@ -27,12 +27,10 @@ dependencies {
         
         "org.mybatis:mybatis:${mybatisVersion}",
 
-        "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}",
-        "com.fasterxml.jackson.core:jackson-databind:${jacksonDatabindVersion}",
+        "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}",
 
 	    "javax.transaction:jta:${jtaVersion}",
-	    "javax.mail:javax.mail-api:${mailVersion}",
-	    "com.sun.mail:javax.mail:${mailVersion}",
+	    "com.sun.mail:jakarta.mail:${mailVersion}",
         "javax.servlet:javax.servlet-api:${servletVersion}"
     )
     compile(

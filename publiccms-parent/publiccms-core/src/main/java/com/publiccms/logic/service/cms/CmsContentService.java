@@ -7,8 +7,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Future;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -181,6 +183,16 @@ public class CmsContentService extends BaseService<CmsContent> {
         return dao.getPage(queryEntity, orderField, orderType, pageIndex, pageSize);
     }
 
+    /**
+     * @param siteId
+     * @param quoteId
+     * @return results list
+     */
+    @Transactional(readOnly = true)
+    public List<CmsContent> getListByQuoteId(Short siteId, Long quoteId) {
+        return dao.getListByQuoteId(siteId, quoteId);
+    }
+
     public CmsContent saveTagAndAttribute(Short siteId, Long userId, Long id, CmsContentParameters contentParameters,
             CmsModel cmsModel, Integer extendId, CmsContentAttribute attribute) {
         CmsContent entity = getEntity(id);
@@ -303,6 +315,23 @@ public class CmsContentService extends BaseService<CmsContent> {
     /**
      * @param siteId
      * @param user
+     * @param id 
+     * @return result
+     */
+    public CmsContent check(short siteId, SysUser user, Serializable id) {
+        CmsContent entity = getEntity(id);
+        if (null != entity && siteId == entity.getSiteId() && STATUS_DRAFT != entity.getStatus()
+                && STATUS_NORMAL != entity.getStatus() && (user.isOwnsAllContent() || entity.getUserId() == user.getId())) {
+            entity.setStatus(STATUS_NORMAL);
+            entity.setCheckUserId(user.getId());
+            entity.setCheckDate(CommonUtils.getDate());
+        }
+        return entity;
+    }
+
+    /**
+     * @param siteId
+     * @param user
      * @param ids
      * @return results list
      */
@@ -400,16 +429,14 @@ public class CmsContentService extends BaseService<CmsContent> {
      * @param cmsModel
      * @param category
      * @param attribute
+     * @return categoryIds set
      */
-    @SuppressWarnings("unchecked")
-    public void updateQuote(short siteId, Serializable id, CmsContentParameters contentParameters, CmsModel cmsModel,
+    public Set<Integer> updateQuote(short siteId, Serializable id, CmsContentParameters contentParameters, CmsModel cmsModel,
             CmsCategory category, CmsContentAttribute attribute) {
         CmsContent entity = getEntity(id);
+        Set<Integer> categoryIds = new HashSet<>();
         if (null != entity) {
-            CmsContentQuery query = new CmsContentQuery();
-            query.setSiteId(siteId);
-            query.setQuoteId(entity.getId());
-            for (CmsContent quote : (List<CmsContent>) getPage(query, null, null, null, null, null).getList()) {
+            for (CmsContent quote : getListByQuoteId(siteId, entity.getId())) {
                 if (null != contentParameters.getContentIds() && contentParameters.getContentIds().contains(quote.getId())) {
                     quote.setUrl(entity.getUrl());
                     quote.setTitle(entity.getTitle());
@@ -427,9 +454,11 @@ public class CmsContentService extends BaseService<CmsContent> {
                     quote.setHasImages(entity.isHasImages());
                 } else {
                     delete(quote.getId());
+                    categoryIds.add(quote.getCategoryId());
                 }
             }
         }
+        return categoryIds;
     }
 
     /**
@@ -541,17 +570,13 @@ public class CmsContentService extends BaseService<CmsContent> {
      * @param ids
      * @return list of data deleted
      */
-    @SuppressWarnings("unchecked")
     public List<CmsContent> delete(short siteId, SysUser user, Serializable[] ids) {
         List<CmsContent> entityList = new ArrayList<>();
         for (CmsContent entity : getEntitys(ids)) {
             if (siteId == entity.getSiteId() && !entity.isDisabled()
                     && (user.isOwnsAllContent() || entity.getUserId() == user.getId())) {
                 if (null == entity.getParentId()) {
-                    CmsContentQuery query = new CmsContentQuery();
-                    query.setSiteId(siteId);
-                    query.setQuoteId(entity.getId());
-                    for (CmsContent quote : (List<CmsContent>) getPage(query, null, null, null, null, null).getList()) {
+                    for (CmsContent quote : getListByQuoteId(siteId, entity.getId())) {
                         quote.setDisabled(true);
                     }
                 } else {

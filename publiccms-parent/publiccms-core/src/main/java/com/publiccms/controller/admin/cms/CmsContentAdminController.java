@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -171,16 +172,21 @@ public class CmsContentAdminController {
         entity = service.saveTagAndAttribute(site.getId(), admin.getId(), entity.getId(), contentParameters, cmsModel,
                 category.getExtendId(), attribute);
         if (null != checked && checked) {
-            service.check(site.getId(), admin, new Long[] { entity.getId() });
+            entity = service.check(site.getId(), admin, entity.getId());
         }
         templateComponent.createContentFile(site, entity, category, categoryModel);// 静态化
-        if (null == entity.getParentId() && !entity.isOnlyUrl()) {
-            service.updateQuote(site.getId(), entity.getId(), contentParameters, cmsModel, category, attribute);
+        if (null == entity.getParentId() && null == entity.getQuoteContentId()) {
+            Set<Integer> categoryIdsSet = service.updateQuote(site.getId(), entity.getId(), contentParameters, cmsModel, category,
+                    attribute);
             if (CommonUtils.notEmpty(contentParameters.getCategoryIds())) {
                 List<CmsCategory> categoryList = categoryService.getEntitys(
                         contentParameters.getCategoryIds().toArray(new Integer[contentParameters.getCategoryIds().size()]));
                 service.saveQuote(site.getId(), entity.getId(), contentParameters, categoryList, cmsModel, category, attribute);
                 if (null != checked && checked) {
+                    if (!categoryIdsSet.isEmpty()) {
+                        categoryList
+                                .addAll(categoryService.getEntitys(categoryIdsSet.toArray(new Integer[categoryIdsSet.size()])));
+                    }
                     for (CmsCategory c : categoryList) {
                         templateComponent.createCategoryFile(site, c, null, null);
                     }
@@ -563,8 +569,7 @@ public class CmsContentAdminController {
     private boolean publish(SysSite site, CmsContent entity, SysUser admin) {
         CmsCategoryModel categoryModel = categoryModelService
                 .getEntity(new CmsCategoryModelId(entity.getCategoryId(), entity.getModelId()));
-        if (null != categoryModel && (admin.isOwnsAllContent() || entity.getUserId() == admin.getId())
-                && (!entity.isOnlyUrl() || null != entity.getQuoteContentId())) {
+        if (null != categoryModel && (admin.isOwnsAllContent() || entity.getUserId() == admin.getId())) {
             return templateComponent.createContentFile(site, entity, null, categoryModel);
         }
         return false;
@@ -576,13 +581,14 @@ public class CmsContentAdminController {
      * @param orderField
      * @param orderType
      * @param request
+     * @param response
      * @param model
      * @return view name
      */
     @RequestMapping("export")
     @Csrf
     public ExcelView export(@RequestAttribute SysSite site, CmsContentQuery queryEntity, String orderField, String orderType,
-            HttpServletRequest request, ModelMap model) {
+            HttpServletRequest request, HttpServletResponse response, ModelMap model) {
         queryEntity.setSiteId(site.getId());
         queryEntity.setDisabled(false);
         queryEntity.setEmptyParent(true);
@@ -619,7 +625,6 @@ public class CmsContentAdminController {
 
         Map<String, CmsModel> modelMap = modelComponent.getMap(site);
         DateFormat dateFormat = DateFormatUtils.getDateFormat(DateFormatUtils.FULL_DATE_FORMAT_STRING);
-
         ExcelView view = new ExcelView(workbook -> {
             Sheet sheet = workbook.createSheet(
                     LanguagesUtils.getMessage(CommonConstants.applicationContext, request.getLocale(), "page.content"));
@@ -682,6 +687,7 @@ public class CmsContentAdminController {
                 row.createCell(j++).setCellValue(null == user ? null : user.getNickName());
             }
         });
+        view.setFilename(LanguagesUtils.getMessage(CommonConstants.applicationContext, request.getLocale(), "page.content"));
         return view;
     }
 

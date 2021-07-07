@@ -85,8 +85,21 @@ public class HttpParameterHandler extends BaseHandler {
     }
 
     @Override
+    public Byte getByteWithoutRegister(String name) {
+        String result = getStringWithoutRegister(name);
+        if (CommonUtils.notEmpty(result)) {
+            try {
+                return Byte.valueOf(result);
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+        return null;
+    }
+    
+    @Override
     public Short getShort(String name) {
-        regristerParameter(PARAMETER_TYPE_STRING, name);
+        regristerParameter(PARAMETER_TYPE_SHORT, name);
         String result = getStringWithoutRegister(name);
         if (CommonUtils.notEmpty(result)) {
             try {

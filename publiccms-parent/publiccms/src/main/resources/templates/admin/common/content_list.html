@@ -52,7 +52,7 @@
                     </li>
                 <#if authorizedMap['cmsContent/export']>
                     <li>
-                        <a class="button" href="cmsContent/export.do?categoryId=${(parent.categoryId)!categoryId!}&_csrf=<@_csrfToken admin=true/>" target="dwzExport" targetType="navTab"><i class="icon-download-alt icon-large"></i> <@t.page 'button.export'/></a>
+                        <a class="button" href="cmsContent/export?categoryId=${(parent.categoryId)!categoryId!}&_csrf=<@_csrfToken admin=true/>" target="dwzExport" targetType="navTab"><i class="icon-download-alt icon-large"></i> <@t.page 'button.export'/></a>
                     </li>
                 </#if>
                 </ul>
@@ -74,7 +74,7 @@
                 <@t.merge 'tempModelIds' a.id!/>
             </#list>
             <li>
-                <a href="javascript:void(0)" class="addMore"><i class="icon-plus icon-large"></i> <@t.page 'content.add'/></a>
+                <a href="javascript:void(0)" class="addMore"><i class="icon-double-angle-down icon-large"></i> <@t.page 'content.add'/></a>
                 <ul>
             <@_categoryModel modelIds=t.tempModelIds categoryId=categoryId><#assign categoryModelMap=map/></@_categoryModel>
             <#assign size=0/>
@@ -104,26 +104,26 @@
             <li class="line">line</li>
 </#if>
         <#if authorizedMap['cmsContent/check']>
-            <li><a href="cmsContent/check.do?_csrf=<@_csrfToken admin=true/>" title="<@t.page 'confirm.batch_check'/>" target="selectedTodo" rel="ids"><i class="icon-check icon-large"></i> <@t.page 'button.batch_check'/></a></li>
+            <li><a href="cmsContent/check?_csrf=<@_csrfToken admin=true/>" title="<@t.page 'confirm.batch_check'/>" target="selectedTodo" rel="ids"><i class="icon-check icon-large"></i> <@t.page 'button.batch_check'/></a></li>
         </#if>
         <#if authorizedMap['cmsContent/reject']>
-            <li><a href="cmsContent/reject.do?_csrf=<@_csrfToken admin=true/>" title="<@t.page 'confirm.batch_reject'/>" target="selectedTodo" rel="ids"><i class="icon-check icon-large"></i> <@t.page 'button.batch_reject'/></a></li>
+            <li><a href="cmsContent/reject?_csrf=<@_csrfToken admin=true/>" title="<@t.page 'confirm.batch_reject'/>" target="selectedTodo" rel="ids"><i class="icon-check icon-large"></i> <@t.page 'button.batch_reject'/></a></li>
         </#if>
         <#if authorizedMap['cmsContent/uncheck']>
-            <li><a href="cmsContent/uncheck.do?_csrf=<@_csrfToken admin=true/>" title="<@t.page 'confirm.batch_uncheck'/>" target="selectedTodo" rel="ids"><i class="icon-check icon-large"></i> <@t.page 'button.batch_uncheck'/></a></li>
+            <li><a href="cmsContent/uncheck?_csrf=<@_csrfToken admin=true/>" title="<@t.page 'confirm.batch_uncheck'/>" target="selectedTodo" rel="ids"><i class="icon-check icon-large"></i> <@t.page 'button.batch_uncheck'/></a></li>
         </#if>
         <#if authorizedMap['cmsContent/refresh'] && !site.useStatic>
-            <li><a href="cmsContent/refresh.do?_csrf=<@_csrfToken admin=true/>" title="<@t.page 'confirm.batch_refresh'/>" target="selectedTodo" rel="ids"><i class="icon-refresh icon-large"></i> <@t.page 'button.batch_refresh'/></a></li>
+            <li><a href="cmsContent/refresh?_csrf=<@_csrfToken admin=true/>" title="<@t.page 'confirm.batch_refresh'/>" target="selectedTodo" rel="ids"><i class="icon-refresh icon-large"></i> <@t.page 'button.batch_refresh'/></a></li>
         </#if>
         <#if authorizedMap['cmsContent/publish']>
-            <li><a href="cmsContent/publish.do?_csrf=<@_csrfToken admin=true/>" title="<@t.page 'confirm.batch_publish'/>" target="selectedTodo" rel="ids"><i class="icon-file-text-alt icon-large"></i> <@t.page 'button.batch_publish'/></a></li>
+            <li><a href="cmsContent/publish?_csrf=<@_csrfToken admin=true/>" title="<@t.page 'confirm.batch_publish'/>" target="selectedTodo" rel="ids"><i class="icon-file-text-alt icon-large"></i> <@t.page 'button.batch_publish'/></a></li>
         </#if>
         <#if !parentId?has_content&&authorizedMap['cmsContent/moveParameters']>
             <li><a href="cmsContent/moveParameters.html" target="dialog" mask="true"><i class="icon-move icon-large"></i> <@t.page 'button.batch_move'/></a></li>
         </#if>
         <#if authorizedMap['cmsContent/delete']>
             <li class="line">line</li>
-            <li><a href="cmsContent/delete.do?_csrf=<@_csrfToken admin=true/>" title="<@t.page 'confirm.batch_delete'/>" target="selectedTodo" rel="ids"><i class="icon-trash icon-large"></i> <@t.page 'button.batch_delete'/></a></li>
+            <li><a href="cmsContent/delete?_csrf=<@_csrfToken admin=true/>" title="<@t.page 'confirm.batch_delete'/>" target="selectedTodo" rel="ids"><i class="icon-trash icon-large"></i> <@t.page 'button.batch_delete'/></a></li>
         </#if>
         </ul>
     </div>
@@ -156,8 +156,8 @@
 
             <#list page.list as a>
                 <#assign contentId=(a.quoteContentId?has_content)?then(a.quoteContentId,a.id)/>
-            <tr target="sid" rel="${contentId}">
-                <td class="center"><input name="ids" value="${contentId}" type="checkbox"></td>
+            <tr target="sid" rel="${a.id}">
+                <td class="center"><input name="ids" value="${a.id}" type="checkbox"></td>
                 <td class="center">${a.id}</td>
                 <td>
                     <div class="box">
@@ -170,6 +170,9 @@
                         <p>
                             <label><@t.page 'content.promulgator'/>:</label><span class="exclude-translate">${(userMap[a.userId?string].nickName)!}</span>
                             <label><@t.page 'model'/>:</label><span class="exclude-translate">${(modelMap[a.modelId].name)!}</span>
+                            <#if modelMap[a.modelId]?has_content&&modelMap[a.modelId].hasChild>
+                                <label><a href="cmsContent/list.html?parentId=${contentId}&categoryId=${a.categoryId!}" target="navTab" rel="cmsContent/list"><@t.page 'content.child_management'/></a></label>
+                            </#if>
                             <#if a.expiryDate?has_content><label><@t.page 'expiry_date'/>:</label><span class="exclude-translate">${a.expiryDate!}</span></#if>
                         </p>
                     </div>
@@ -190,31 +193,31 @@
                     <#if 1=a.status || 3=a.status>/ <span class="exclude-translate">${(userMap[a.checkUserId?string].nickName)!}</span></#if>
                 </td>
                 <td class="wrap">
-                    <#if modelMap[a.modelId]?has_content&&modelMap[a.modelId].hasChild>
-                        <a href="cmsContent/list.html?parentId=${contentId}&categoryId=${a.categoryId!}" target="navTab" rel="cmsContent/list"><@t.page 'content.child_management'/></a>|
-                    </#if>
                     <#if 1=a.status>
                         <#if authorizedMap['cmsContent/sortParameters']>
                             <#if dept?has_content>
                                 <a href="cmsContent/sortParameters.html?id=${a.id}&sort=${a.sort}" target="dialog" width="450" height="180" mask="true"><@t.page 'top'/></a>|
                             </#if>
                         </#if>
+                        <#if authorizedMap['cmsContent/add']>
+                            <a href="cmsContent/add.html?copyId=${a.id}" target="navTab" rel="cmsContent/add" icon="<i class='icon-plus icon-large'></i>" title="<@t.page 'content.add'/>"><@t.page 'button.copy'/></a>|
+                        </#if>
                         <#if authorizedMap['cmsContent/push']>
                             <a href="cmsContent/push.html?contentId=${a.id}" target="dialog" mask="true"><@t.page 'button.push'/></a>|
                         </#if>
                         <#if authorizedMap['cmsContent/uncheck']>
-                            <a href="cmsContent/uncheck.do?ids=${a.id}&_csrf=<@_csrfToken admin=true/>" title="<@t.page 'confirm.uncheck'/>" target="ajaxTodo"><@t.page 'button.uncheck'/></a>|
+                            <a href="cmsContent/uncheck?ids=${a.id}&_csrf=<@_csrfToken admin=true/>" title="<@t.page 'confirm.uncheck'/>" target="ajaxTodo"><@t.page 'button.uncheck'/></a>|
                         </#if>
                     <#elseif 2=a.status>
                         <#if authorizedMap['cmsContent/check']>
-                            <a href="cmsContent/check.do?ids=${a.id}&_csrf=<@_csrfToken admin=true/>" title="<@t.page 'confirm.check'/>" target="ajaxTodo"><@t.page 'button.check'/></a>|
+                            <a href="cmsContent/check?ids=${a.id}&_csrf=<@_csrfToken admin=true/>" title="<@t.page 'confirm.check'/>" target="ajaxTodo"><@t.page 'button.check'/></a>|
                         </#if>
                         <#if authorizedMap['cmsContent/reject']>
-                            <a href="cmsContent/reject.do?ids=${a.id}&_csrf=<@_csrfToken admin=true/>" title="<@t.page 'confirm.reject'/>" target="ajaxTodo"><@t.page 'button.reject'/></a>|
+                            <a href="cmsContent/reject?ids=${a.id}&_csrf=<@_csrfToken admin=true/>" title="<@t.page 'confirm.reject'/>" target="ajaxTodo"><@t.page 'button.reject'/></a>|
                         </#if>
                     </#if>
                     <#if authorizedMap['cmsContent/delete']>
-                        <a href="cmsContent/delete.do?ids=${a.id}&_csrf=<@_csrfToken admin=true/>" title="<@t.page 'confirm.delete'/>" target="ajaxTodo"><@t.page 'button.delete'/></a>
+                        <a href="cmsContent/delete?ids=${a.id}&_csrf=<@_csrfToken admin=true/>" title="<@t.page 'confirm.delete'/>" target="ajaxTodo"><@t.page 'button.delete'/></a>
                     </#if>
                 </td>
             </tr>

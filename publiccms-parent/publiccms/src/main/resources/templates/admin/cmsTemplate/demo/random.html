@@ -11,7 +11,7 @@
         <ul>
         <#list page.list as a>
             <li>
-                <h3><a href="<#if a.onlyUrl>${site.dynamicPath}content/redirect.do?id=${a.id}<#else>${a.url!}</#if>" target="_blank">${a.title}</a></h3>
+                <h3><a href="<#if a.onlyUrl>${site.dynamicPath}content/redirect?id=${a.id}<#else>${a.url!}</#if>" target="_blank">${a.title}</a></h3>
                 <p>
                     <#if a.cover?has_content><img src="${a.cover}" alt="${a.title}"/></#if>
                     ${a.description!}
@@ -25,5 +25,14 @@
     <footer>
         Copyright &copy; ${.now?string('yyyy')}
     </footer>
+    <script src="${site.sitePath}resource/js/cms.analytics.js"></script>
+    <script>
+        var ca = cmsAnalytics();
+        var url='${site.dynamicPath}api/visit/record';
+        if("string" ==typeof itemString){
+            url=url+"?"+itemString;
+        }
+        ca.report(url);
+    </script>
 </body>
 </html>

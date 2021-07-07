@@ -118,6 +118,11 @@ public class TemplateDirectiveHandler extends BaseHandler {
     public Integer getIntegerWithoutRegister(String name) throws TemplateModelException {
         return TemplateModelUtils.converInteger(parameters.get(name));
     }
+    
+    @Override
+    public Byte getByteWithoutRegister(String name) throws TemplateModelException {
+        return TemplateModelUtils.converByte(parameters.get(name));
+    }
 
     @Override
     public Short getShort(String name) throws TemplateModelException {

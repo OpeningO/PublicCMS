@@ -1,7 +1,6 @@
-<@_content id=id absoluteURL=false>
+<@_content id=id!copyId absoluteURL=false>
     <#assign
         a=object
-        id=a.id
         parentId=a.parentId!''
         categoryId=a.categoryId!''
         modelId=a.modelId!''
@@ -12,7 +11,7 @@
 <@_model id=modelId!><#assign model=object/></@_model>
 <script>
 </script>
-<form method="post" autocomplete="off" action="cmsContent/save.do?callbackType=closeCurrent&navTabId=cmsContent/list&forwardUrl=" class="pageForm required-validate" onsubmit="clickAddTag(); return validateCallback(this,navTabAjaxDone);">
+<form method="post" autocomplete="off" action="cmsContent/save?callbackType=closeCurrent&navTabId=cmsContent/list&forwardUrl=" class="pageForm required-validate" onsubmit="clickAddTag(); return validateCallback(this,navTabAjaxDone);">
     <input name="id" type="hidden" value="${id!}" />
     <input name="parentId" type="hidden" value="${parentId!}" />
     <input type="hidden" name="_csrf" value="<@_csrfToken admin=true/>"/>
@@ -61,7 +60,7 @@
                     <dd>
                         <input name="categoryId" type="hidden" value="${categoryId!}"/>
                         <label style="width:auto">${(category.name)!}</label>
-                   <#if !parentId?has_content && !model.onlyUrl>
+                   <#if !parentId?has_content>
                         <input name="quoteCategoryId" type="hidden"/>
                         <input name="categoryName" type="hidden"/>
                         <div class="tagsBox categoryIds"></div>
@@ -69,19 +68,21 @@
                     </#if>
                     </dd>
                 </dl>
-                    <#if !parentId?has_content && !model.onlyUrl>
+                    <#if !parentId?has_content>
 <script>
 $('input[name=\'categoryName\']',navTab.getCurrentPanel()).on('change',function(){
     addCategory($('input[name=\'quoteCategoryId\']',navTab.getCurrentPanel()).val(), $(this).val(), null);
 });
+<#assign copy=false/>
 <#if a?has_content>
-<@_contentList quoteId=a.id pageSize=100>
-    <#list page.list as a>
+<@_contentQuoteList quoteId=a.id>
+    <#list list as a>
     <@_category id=a.categoryId>
     addCategory('${a.categoryId}','${object.name}','${a.id}');
     </@_category>
     </#list>
-</@_contentList>
+</@_contentQuoteList>
+<#if copyId?has_content && !id?has_content><#assign copy=true/></#if>
 </#if>
 </script>
                     </#if>
@@ -190,7 +191,7 @@ $('input[name=timing]',navTab.getCurrentPanel()).click();
                     <dt>${(model.fieldTextMap['cover'])!}:</dt>
                     <dd>
                         <input name="cover"<#if requiredFieldList?seq_contains('cover')> class="required"</#if> value="${(a.cover)!}" maxlength="300" size="50" type="text"/>
-                        <a class="btnAttach" href="common/upload.html?field=cover&fileTypes=image" lookupGroup="" width="560" height="300">${(model.fieldTextMap['cover'])!}</a>
+                        <a class="btnAttach" href="common/upload.html?field=cover&fileTypes=image" lookupGroup="" width="1000" height="600">${(model.fieldTextMap['cover'])!}</a>
                         <#include "../include_page/preview.html"/>
                         <@preview 'content' 'input[name=cover]'/>
                     </dd>
@@ -223,13 +224,13 @@ $('input[name=timing]',navTab.getCurrentPanel()).click();
                 <#if model.hasImages>
                 <fieldset>
                     <legend><@t.page 'image_list'/></legend>
-                    <@contentFiles true id!/>
+                    <@contentFiles true id!copyId copy/>
                 </fieldset>
                 </#if>
                 <#if model.hasFiles>
                 <fieldset>
                     <legend><@t.page 'attach_list'/></legend>
-                    <@contentFiles false id!/>
+                    <@contentFiles false id!copyId copy/>
                 </fieldset>
                 </#if>
             </#if>

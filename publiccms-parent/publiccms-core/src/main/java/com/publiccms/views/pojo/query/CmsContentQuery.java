@@ -12,13 +12,12 @@ public class CmsContentQuery implements java.io.Serializable {
     private Short siteId;
     private Integer[] status;
     private Integer categoryId;
+    private Integer quoteId;
     private Integer[] categoryIds;
     private Boolean disabled;
     private String[] modelIds;
     private Long parentId;
     private Boolean emptyParent;
-    private Long quoteId;
-    private Boolean emptyQuote;
     private Boolean onlyUrl;
     private Boolean hasImages;
     private Boolean hasFiles;
@@ -36,7 +35,7 @@ public class CmsContentQuery implements java.io.Serializable {
     }
 
     public CmsContentQuery(Short siteId, Integer[] status, Integer categoryId, Integer[] categoryIds, Boolean disabled,
-            String[] modelIds, Long parentId, Boolean emptyParent, Long quoteId, Boolean emptyQuote, Boolean onlyUrl,
+            String[] modelIds, Long parentId, Boolean emptyParent, Boolean onlyUrl,
             Boolean hasImages, Boolean hasFiles, Boolean hasCover, String title, Long userId, Date startPublishDate,
             Date endPublishDate, Date expiryDate) {
         super();
@@ -48,8 +47,6 @@ public class CmsContentQuery implements java.io.Serializable {
         this.modelIds = modelIds;
         this.parentId = parentId;
         this.emptyParent = emptyParent;
-        this.quoteId = quoteId;
-        this.emptyQuote = emptyQuote;
         this.onlyUrl = onlyUrl;
         this.hasImages = hasImages;
         this.hasFiles = hasFiles;
@@ -104,6 +101,21 @@ public class CmsContentQuery implements java.io.Serializable {
      */
     public void setCategoryId(Integer categoryId) {
         this.categoryId = categoryId;
+    }
+    
+    /**
+     * @return the quoteId
+     */
+    public Integer getQuoteId() {
+        return quoteId;
+    }
+    
+    /**
+     * @param quoteId
+     *            the quoteId to set
+     */
+    public void setQuoteId(Integer quoteId) {
+        this.quoteId = quoteId;
     }
 
     /**
@@ -179,36 +191,6 @@ public class CmsContentQuery implements java.io.Serializable {
      */
     public void setEmptyParent(Boolean emptyParent) {
         this.emptyParent = emptyParent;
-    }
-
-    /**
-     * @return the quote
-     */
-    public Long getQuoteId() {
-        return quoteId;
-    }
-
-    /**
-     * @param quoteId
-     *            the quoteId to set
-     */
-    public void setQuoteId(Long quoteId) {
-        this.quoteId = quoteId;
-    }
-
-    /**
-     * @return the emptyQuote
-     */
-    public Boolean getEmptyQuote() {
-        return emptyQuote;
-    }
-
-    /**
-     * @param emptyQuote
-     *            the emptyQuote to set
-     */
-    public void setEmptyQuote(Boolean emptyQuote) {
-        this.emptyQuote = emptyQuote;
     }
 
     /**
