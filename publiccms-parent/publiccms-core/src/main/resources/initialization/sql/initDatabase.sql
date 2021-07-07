@@ -959,6 +959,7 @@ INSERT INTO `sys_module` VALUES ('webfile_upload', 'cmsWebFile/upload', 'cmsWebF
 INSERT INTO `sys_module` VALUES ('webfile_zip', NULL, 'cmsWebFile/zip', NULL, 'webfile_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('word_list', 'cmsWord/list', NULL, 'icon-search', 'content_menu', 1, 6);
 
+
 -- ----------------------------
 -- Table structure for sys_module_lang
 -- ----------------------------
@@ -1568,6 +1569,9 @@ INSERT INTO `sys_module_lang` VALUES ('webfile_zip', 'zh', '压缩');
 INSERT INTO `sys_module_lang` VALUES ('word_list', 'en', 'Search word management');
 INSERT INTO `sys_module_lang` VALUES ('word_list', 'ja', '検索ワード管理');
 INSERT INTO `sys_module_lang` VALUES ('word_list', 'zh', '搜索词管理');
+INSERT INTO `sys_module_lang` VALUES ('repo_sync', 'en', 'Repo Sync');
+INSERT INTO `sys_module_lang` VALUES ('repo_sync', 'ja', '倉庫同期');
+INSERT INTO `sys_module_lang` VALUES ('repo_sync', 'zh', '仓库同步');
 
 -- ----------------------------
 -- Table structure for sys_role
