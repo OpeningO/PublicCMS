@@ -10,8 +10,9 @@
     <!--[if IE 7]>
     <link href="${base}/resource/font-awesome/css/font-awesome-ie7.min.css" rel="stylesheet" >
     <![endif]-->
-    <link href="${base}/resource/themes/css/core.css?version=5" rel="stylesheet" media="screen"/>
+    <link href="${base}/resource/themes/css/core.css?version=6" rel="stylesheet" media="screen"/>
     <link href="${base}/resource/themes/css/print.css" rel="stylesheet" media="print"/>
+    <link href="${base}/resource/css/cms.css" rel="stylesheet" media="screen"/>
     <!--[if lte IE 9]>
         <link href="${base}/resource/themes/css/ieHack.css" rel="stylesheet" media="screen"/>
         <script src="${base}/resource/js/html5shiv.min.js"></script>
@@ -39,6 +40,9 @@
         </li>
     </ul>
     <ul id="navMenu">
+        <li>
+            <a href="javascript:;" onclick="return false;" class="toggleCollapse"><i class="icon icon-chevron-sign-left icon-large"></i></a>
+        </li>
 <@_sysModuleList>
     <#list page.list as a>
         <@t.merge 'moduleIds' a.id!/>
@@ -76,10 +80,9 @@
         <div class="tabsPageHeader">
             <div class="tabsPageHeaderContent">
                 <ul class="navTab-tab">
-                    <li tabid="main" class="main"><a href="javascript:;" onclick="return false;"><i class="icon-home icon-large"></i> <@t.page 'workgin_table'/></a></li>
+                    <li tabid="main" class="main" url="main.html"><a href="javascript:;" onclick="return false;"><i class="icon-home icon-large"></i> <@t.page 'workgin_table'/></a></li>
                 </ul>
             </div>
-            <a href="javascript:;" onclick="return false;" class="toggleCollapse"><i class="icon icon-chevron-sign-left icon-large"></i></a>
             <a href="javascript:;" onclick="return false;" class="tabsLeft"><i class="icon-backward icon-large"></i></a>
             <a href="javascript:;" onclick="return false;" class="tabsRight"><i class="icon-forward icon-large"></i></a>
             <a href="javascript:;" onclick="return false;" class="tabsMore"><i class="icon-th-list icon-large"></i></a>
@@ -98,9 +101,9 @@
    <ul class="langList">
     <#list langs as k,v>
         <li<#if springMacroRequestContext.getMessage('page.lang')=k> class="current-lang"</#if>>
-        	<a href="changeLocale?lang=${k}" target="ajaxTodo">
-        		<img src="${base}/resource/themes/images/${k}.png" alt="${v}"/>${v}
-        	</a>
+            <a href="changeLocale?lang=${k}" target="ajaxTodo">
+                <img src="${base}/resource/themes/images/${k}.png" alt="${v}"/>${v}
+            </a>
         </li>
     </#list>
     </ul>
@@ -127,12 +130,11 @@
 <script src="${base}/resource/js/jquery.validate.js"></script>
 <script src="${base}/resource/js/jquery.bgiframe.js"></script>
 <script src="${base}/resource/js/base64.js"></script>
-<script src="${base}/resource/js/sha512.min.js"></script>
-<script src="${base}/resource/js/dwz.min.js?version=4"></script>
-<script src="${base}/resource/js/dwz.plugins.js"></script>
-<script src="${base}/resource/js/<@t.page 'dwz_regional_js'/>?version=1"></script>
+<script src="${base}/resource/js/dwz.min.js?version=6"></script>
+<script src="${base}/resource/js/dwz.plugins.js?version=6"></script>
+<script src="${base}/resource/js/<@t.page 'dwz_regional_js'/>?version=2"></script>
 <script src="${base}/resource/js/cms.js"></script>
-    <script>
+<script>
     var base="${base+adminContextPath}";
     window.UEDITOR_HOME_URL="${site.dynamicPath}resource/ueditor/";
     window.CKEDITOR_BASEPATH="${site.dynamicPath}resource/ckeditor/";
@@ -146,21 +148,31 @@
             allowFileManager : true,
             formatUploadUrl : false
     };
-    DWZ.init("${base+adminContextPath}/common/dwz.frag.html", {
-        ckeditorResources:["${base}/resource/ckeditor/ckeditor.js"],
-        kindeditorResources:["${base}/resource/kindeditor/kindeditor-all.js","${base}/resource/kindeditor/<@t.page 'kindeditor.lang_js'/>"],
-        ueditorResources:["${base}/resource/ueditor/ueditor.config.js","${base}/resource/ueditor/ueditor.all.min.js","${base}/resource/ueditor/lang/<@t.page 'ueditor.lang_js'/>"],
-        codemirrorResources:['${base}/resource/codemirror/lib/codemirror.js','${base}/resource/codemirror/mode/xml/xml.js','${base}/resource/codemirror/mode/javascript/javascript.js','${base}/resource/codemirror/mode/css/css.js',
+    window.editor = {
+        ckeditorResources: ["${base}/resource/ckeditor/ckeditor.js"],
+        ueditorResources: ["${base}/resource/ueditor/ueditor.config.js","${base}/resource/ueditor/ueditor.all.min.js","${base}/resource/ueditor/lang/<@t.page 'ueditor.lang_js'/>"],
+        kindeditorResources: ["${base}/resource/kindeditor/kindeditor-all.js","${base}/resource/kindeditor/<@t.page 'kindeditor.lang_js'/>"],
+        ckeditorInitd: false,
+        ueditorInitd: false,
+        kindeditorInitd: false,
+        index: 0
+    };
+    window.codemirror = {
+        resources: ['${base}/resource/codemirror/lib/codemirror.js','${base}/resource/codemirror/mode/xml/xml.js','${base}/resource/codemirror/mode/javascript/javascript.js','${base}/resource/codemirror/mode/css/css.js',
             '${base}/resource/codemirror/mode/htmlmixed/htmlmixed.js','${base}/resource/codemirror/mode/freemarker/freemarker.js','${base}/resource/codemirror/mode/freemarkermixed/freemarkermixed.js',
             '${base}/resource/codemirror/mode/nginx/nginx.js','${base}/resource/codemirror/addon/hint/show-hint.js','${base}/resource/codemirror/addon/hint/javascript-hint.js','${base}/resource/codemirror/addon/hint/html-hint.js',
             '${base}/resource/codemirror/addon/hint/css-hint.js','${base}/resource/codemirror/addon/hint/xml-hint.js'],
+        initd: false,
+        index: 0
+    };
+    DWZ.init("${base+adminContextPath}/common/dwz.frag.html", {
         loginUrl:"login_dialog.html", loginTitle:"<@t.page 'login'/>",
         pageInfo:{pageNum:"pageNum", numPerPage:"numPerPage", orderField:"orderField", orderDirection:"orderType"},
         debug:false,
         callback:function(){
             initEnv();
             $("#themeList").theme({themeBase:"${base}/resource/themes",defaultTheme:"toptry"});
-    <@_sysAuthorized roleIds=admin.roles url='myself/password'>
+    <@_sysAuthorized roleIds=admin.roles url='changePassword'>
         <#if admin.weakPassword>
             $.pdialog.open("myself/password.html?target=dialog", "_blank", "<@t.page 'user.new_password'/>", {mask: true, width: 410, height: 280});
         </#if>
@@ -168,6 +180,6 @@
             $('#navMenu li a[parentId=${parentId!0}]').parent().addClass("selected");
         }
     });
-    </script>
+</script>
 </body>
 </html>

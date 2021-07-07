@@ -208,6 +208,7 @@ public class CmsContentAdminController {
             CmsContentAttribute attribute, boolean base64, Date now) {
         entity.setHasFiles(cmsModel.isHasFiles());
         entity.setHasImages(cmsModel.isHasImages());
+        entity.setHasProducts(cmsModel.isHasProducts());
         entity.setOnlyUrl(cmsModel.isOnlyUrl());
         if ((null == checked || !checked) && null != draft && draft) {
             entity.setStatus(CmsContentService.STATUS_DRAFT);
@@ -567,10 +568,8 @@ public class CmsContentAdminController {
     }
 
     private boolean publish(SysSite site, CmsContent entity, SysUser admin) {
-        CmsCategoryModel categoryModel = categoryModelService
-                .getEntity(new CmsCategoryModelId(entity.getCategoryId(), entity.getModelId()));
-        if (null != categoryModel && (admin.isOwnsAllContent() || entity.getUserId() == admin.getId())) {
-            return templateComponent.createContentFile(site, entity, null, categoryModel);
+        if ((admin.isOwnsAllContent() || entity.getUserId() == admin.getId())) {
+            return templateComponent.createContentFile(site, entity, null, null);
         }
         return false;
     }

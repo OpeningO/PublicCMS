@@ -31,19 +31,23 @@ public class TradeOrderHistoryService extends BaseService<TradeOrderHistory> {
     /**
      * 
      */
+    public static final String OPERATE_PAID = "paid";
+    /**
+     * 
+     */
     public static final String OPERATE_PROCESSED = "processed";
     /**
      * 
      */
-    public static final String OPERATE_PROCESS_ERROR = "processError";
+    public static final String OPERATE_INVALID = "invalid";
     /**
      * 
      */
-    public static final String OPERATE_NOTIFY = "notify";
+    public static final String OPERATE_CONFIRM = "confirm";
     /**
      * 
      */
-    public static final String OPERATE_PENDING_REFUND = "pendingRefund";
+    public static final String OPERATE_CANCELPAY = "cancelPay";
     /**
      * 
      */
@@ -51,7 +55,7 @@ public class TradeOrderHistoryService extends BaseService<TradeOrderHistory> {
     /**
      * 
      */
-    public static final String OPERATE_CANNEL = "cannel";
+    public static final String OPERATE_CLOSE = "close";
 
     /**
      * 

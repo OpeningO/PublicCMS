@@ -14,6 +14,7 @@ import javax.persistence.TemporalType;
 
 import org.hibernate.annotations.GenericGenerator;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.publiccms.common.database.CmsUpgrader;
 import com.publiccms.common.generator.annotation.GeneratorColumn;
 
@@ -31,8 +32,13 @@ public class TradeRefund implements java.io.Serializable {
 
     @GeneratorColumn(title = "ID")
     private Long id;
+    @GeneratorColumn(title = "站点", condition = true)
+    @JsonIgnore
+    private short siteId;
+    @GeneratorColumn(title = "用户", condition = true)
+    private long userId;
     @GeneratorColumn(title = "订单ID", condition = true)
-    private long orderId;
+    private long paymentId;
     @GeneratorColumn(title = "申请退款金额")
     private BigDecimal amount;
     @GeneratorColumn(title = "原因")
@@ -55,16 +61,20 @@ public class TradeRefund implements java.io.Serializable {
     public TradeRefund() {
     }
 
-    public TradeRefund(long orderId, BigDecimal amount, int status, Date createDate) {
-        this.orderId = orderId;
+    public TradeRefund(short siteId, long userId, long paymentId, BigDecimal amount, int status, Date createDate) {
+        this.siteId = siteId;
+        this.userId = userId;
+        this.paymentId = paymentId;
         this.amount = amount;
         this.status = status;
         this.createDate = createDate;
     }
 
-    public TradeRefund(long orderId, BigDecimal amount, String reason, Date updateDate, Long refundUserId,
+    public TradeRefund(short siteId,long userId, long paymentId, BigDecimal amount, String reason, Date updateDate, Long refundUserId,
             BigDecimal refundAmount, int status, String reply, Date createDate, Date processingDate) {
-        this.orderId = orderId;
+        this.siteId = siteId;
+        this.userId = userId;
+        this.paymentId = paymentId;
         this.amount = amount;
         this.reason = reason;
         this.updateDate = updateDate;
@@ -88,13 +98,31 @@ public class TradeRefund implements java.io.Serializable {
         this.id = id;
     }
 
-    @Column(name = "order_id", nullable = false)
-    public long getOrderId() {
-        return this.orderId;
+    @Column(name = "site_id", nullable = false)
+    public short getSiteId() {
+        return this.siteId;
     }
 
-    public void setOrderId(long orderId) {
-        this.orderId = orderId;
+    public void setSiteId(short siteId) {
+        this.siteId = siteId;
+    }
+
+    @Column(name = "user_id", nullable = false)
+    public long getUserId() {
+        return this.userId;
+    }
+
+    public void setUserId(long userId) {
+        this.userId = userId;
+    }
+
+    @Column(name = "payment_id", nullable = false)
+    public long getPaymentId() {
+        return this.paymentId;
+    }
+
+    public void setPaymentId(long paymentId) {
+        this.paymentId = paymentId;
     }
 
     @Column(name = "amount", nullable = false, precision = 10)

@@ -7,33 +7,24 @@ import javax.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.publiccms.common.api.PaymentGateway;
-import com.publiccms.common.api.TradeOrderProcessor;
-import com.publiccms.common.tools.CommonUtils;
+import com.publiccms.common.base.AbstractPaymentGateway;
 import com.publiccms.entities.sys.SysSite;
 import com.publiccms.entities.trade.TradeAccountHistory;
-import com.publiccms.entities.trade.TradeOrder;
-import com.publiccms.entities.trade.TradeOrderHistory;
+import com.publiccms.entities.trade.TradePayment;
 import com.publiccms.entities.trade.TradeRefund;
-import com.publiccms.logic.component.trade.TradeOrderProcessorComponent;
 import com.publiccms.logic.service.trade.TradeAccountHistoryService;
 import com.publiccms.logic.service.trade.TradeAccountService;
-import com.publiccms.logic.service.trade.TradeOrderHistoryService;
-import com.publiccms.logic.service.trade.TradeOrderService;
+import com.publiccms.logic.service.trade.TradePaymentService;
 
 @Component
-public class AccountGatewayComponent implements PaymentGateway {
+public class AccountGatewayComponent extends AbstractPaymentGateway {
     /**
      * 
      */
     @Autowired
-    private TradeOrderService service;
-    @Autowired
-    private TradeOrderHistoryService historyService;
+    private TradePaymentService service;
     @Autowired
     private TradeAccountService accountService;
-    @Autowired
-    private TradeOrderProcessorComponent tradeOrderProcessorComponent;
 
     @Override
     public String getAccountType() {
@@ -41,41 +32,37 @@ public class AccountGatewayComponent implements PaymentGateway {
     }
 
     @Override
-    public boolean pay(SysSite site, TradeOrder order, String callbackUrl, HttpServletResponse response) {
-        if (null != order && order.getStatus() == TradeOrderService.STATUS_PENDING_PAY
-                && null != accountService.change(order.getSiteId(), order.getAccountSerialNumber(), order.getUserId(),
-                        order.getUserId(), TradeAccountHistoryService.STATUS_PAY, order.getAmount().negate(),
-                        order.getDescription())) {
-            if (service.paid(order.getSiteId(), order.getId(), order.getAccountSerialNumber())) {
-                TradeOrderProcessor tradeOrderProcessor = tradeOrderProcessorComponent.get(order.getTradeType());
-                if (null != tradeOrderProcessor && tradeOrderProcessor.paid(order)) {
-                    service.processed(order.getSiteId(), order.getId());
+    public boolean pay(SysSite site, TradePayment payment, String callbackUrl, HttpServletResponse response) {
+        if (null != payment && payment.getStatus() == TradePaymentService.STATUS_PENDING_PAY) {
+            TradeAccountHistory history = accountService.change(site.getId(), payment.getSerialNumber(), payment.getUserId(),
+                    payment.getUserId(), TradeAccountHistoryService.STATUS_PAY, payment.getAmount().negate(),
+                    payment.getDescription());
+            if (null != history) {
+                if (service.paid(site.getId(), payment.getId(), history.getId().toString())) {
+                    if (confirmPay(site.getId(), payment, response)) {
+                        try {
+                            response.sendRedirect(callbackUrl);
+                        } catch (IOException e) {
+                        }
+                    }
                     return true;
                 } else {
-                    TradeOrderHistory history = new TradeOrderHistory(order.getSiteId(), order.getId(), CommonUtils.getDate(),
-                            TradeOrderHistoryService.OPERATE_PROCESS_ERROR);
-                    historyService.save(history);
+                    accountService.change(site.getId(), payment.getSerialNumber(), payment.getUserId(), payment.getUserId(),
+                            TradeAccountHistoryService.STATUS_REFUND, payment.getAmount(), payment.getDescription());
                 }
-            } else {
-                accountService.change(order.getSiteId(), order.getAccountSerialNumber(), order.getUserId(), order.getUserId(),
-                        TradeAccountHistoryService.STATUS_REFUND, order.getAmount(), order.getDescription());
             }
-        }
-        try {
-            response.sendRedirect(callbackUrl);
-        } catch (IOException e) {
         }
         return false;
     }
 
     @Override
-    public boolean refund(SysSite site, TradeOrder order, TradeRefund refund) {
-        if (null != order && service.refunded(order.getSiteId(), order.getId())) {
-            TradeAccountHistory history = accountService.change(order.getSiteId(), order.getAccountSerialNumber(),
-                    order.getUserId(), order.getUserId(), TradeAccountHistoryService.STATUS_REFUND, order.getAmount().negate(),
-                    order.getDescription());
+    public boolean refund(short siteId, TradePayment payment, TradeRefund refund) {
+        if (null != payment && service.refunded(siteId, payment.getId())) {
+            TradeAccountHistory history = accountService.change(siteId, payment.getSerialNumber(), payment.getUserId(),
+                    payment.getUserId(), TradeAccountHistoryService.STATUS_REFUND, payment.getAmount().negate(),
+                    payment.getDescription());
             if (null == history) {
-                service.pendingRefund(order.getSiteId(), order.getId());
+                service.pendingRefund(siteId, payment.getId());
             } else {
                 return true;
             }
@@ -87,5 +74,4 @@ public class AccountGatewayComponent implements PaymentGateway {
     public boolean enable(short siteId) {
         return true;
     }
-
 }

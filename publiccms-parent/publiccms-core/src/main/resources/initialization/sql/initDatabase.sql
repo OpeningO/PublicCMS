@@ -6,7 +6,7 @@ SET FOREIGN_KEY_CHECKS=0;
 DROP TABLE IF EXISTS `cms_category`;
 CREATE TABLE `cms_category` (
   `id` int(11) NOT NULL auto_increment,
-  `site_id` smallint(6) NOT NULL COMMENT '站点ID',
+  `site_id` smallint(6) NOT NULL COMMENT '站点',
   `name` varchar(50) NOT NULL COMMENT '名称',
   `parent_id` int(11) default NULL COMMENT '父分类ID',
   `type_id` int(11) default NULL COMMENT '分类类型',
@@ -63,7 +63,7 @@ CREATE TABLE `cms_category_model` (
 DROP TABLE IF EXISTS `cms_category_type`;
 CREATE TABLE `cms_category_type` (
   `id` int(11) NOT NULL auto_increment,
-  `site_id` smallint(6) NOT NULL COMMENT '站点ID',
+  `site_id` smallint(6) NOT NULL COMMENT '站点',
   `name` varchar(50) NOT NULL COMMENT '名称',
   `sort` int(11) NOT NULL COMMENT '排序',
   `extend_id` int(11) default NULL COMMENT '扩展ID',
@@ -76,7 +76,7 @@ CREATE TABLE `cms_category_type` (
 DROP TABLE IF EXISTS `cms_comment`;
 CREATE TABLE `cms_comment` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `site_id` smallint(6) NOT NULL COMMENT '站点ID',
+  `site_id` smallint(6) NOT NULL COMMENT '站点',
   `user_id` bigint(20) NOT NULL COMMENT '用户ID',
   `reply_id` bigint(20) DEFAULT NULL COMMENT '回复ID',
   `reply_user_id` bigint(20) DEFAULT NULL COMMENT '回复用户ID',
@@ -100,7 +100,7 @@ CREATE TABLE `cms_comment` (
 DROP TABLE IF EXISTS `cms_content`;
 CREATE TABLE `cms_content` (
   `id` bigint(20) NOT NULL auto_increment,
-  `site_id` smallint(6) NOT NULL COMMENT '站点ID',
+  `site_id` smallint(6) NOT NULL COMMENT '站点',
   `title` varchar(255) NOT NULL COMMENT '标题',
   `user_id` bigint(20) NOT NULL COMMENT '发表用户',
   `check_user_id` bigint(20) default NULL COMMENT '审核用户',
@@ -115,6 +115,7 @@ CREATE TABLE `cms_content` (
   `only_url` tinyint(1) NOT NULL COMMENT '外链',
   `has_images` tinyint(1) NOT NULL COMMENT '拥有图片列表',
   `has_files` tinyint(1) NOT NULL COMMENT '拥有附件列表',
+  `has_products` tinyint(1) NOT NULL COMMENT '拥有产品列表',
   `has_static` tinyint(1) NOT NULL COMMENT '已经静态化',
   `url` varchar(1000) default NULL COMMENT '地址',
   `description` varchar(300) default NULL COMMENT '简介',
@@ -136,7 +137,7 @@ CREATE TABLE `cms_content` (
   PRIMARY KEY  (`id`),
   KEY `cms_content_check_date` (`check_date`,`update_date`),
   KEY `cms_content_scores` (`scores`,`comments`,`clicks`),
-  KEY `cms_content_only_url` (`only_url`,`has_images`,`has_files`,`user_id`),
+  KEY `cms_content_only_url` (`only_url`,`has_images`,`has_files`,`has_products`,`user_id`),
   KEY `cms_content_status` (`site_id`,`status`,`category_id`,`disabled`,`model_id`,`parent_id`,`sort`,`publish_date`,`expiry_date`),
   KEY `cms_content_quote_content_id` (`site_id`, `quote_content_id`)
 ) COMMENT='内容';
@@ -180,7 +181,28 @@ CREATE TABLE `cms_content_file` (
   KEY `cms_content_file_clicks` (`clicks`),
   KEY `cms_content_file_user_id` (`user_id`)
 ) COMMENT='内容附件';
-
+-- ----------------------------
+-- Table structure for cms_content_product
+-- ----------------------------
+CREATE TABLE `cms_content_product` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `site_id` smallint(6) NOT NULL COMMENT '站点',
+  `content_id` bigint(20) NOT NULL COMMENT '内容',
+  `user_id` bigint(20) NOT NULL COMMENT '用户',
+  `cover` varchar(255) DEFAULT NULL COMMENT '封面图',
+  `title` varchar(100) NOT NULL COMMENT '标题',
+  `price` decimal(10,2) NOT NULL COMMENT '价格',
+  `min_quantity` int(11) DEFAULT NULL COMMENT '最小购买数量',
+  `max_quantity` int(11) DEFAULT NULL COMMENT '最大购买数量',
+  `inventory` int(11) NOT NULL COMMENT '库存',
+  `sales` int(11) NOT NULL COMMENT '销量',
+  PRIMARY KEY (`id`),
+  KEY `cms_content_product_content_id` (`site_id`, `content_id`),
+  KEY `cms_content_product_user_id` (`site_id`, `user_id`),
+  KEY `cms_content_product_sales` (`site_id`, `sales`),
+  KEY `cms_content_product_inventory` (`site_id`, `inventory`),
+  KEY `cms_content_product_price` (`site_id`, `price`)
+) COMMENT='内容商品';
 -- ----------------------------
 -- Table structure for cms_content_related
 -- ----------------------------
@@ -205,7 +227,7 @@ CREATE TABLE `cms_content_related` (
 DROP TABLE IF EXISTS `cms_dictionary`;
 CREATE TABLE `cms_dictionary` (
   `id` varchar(20) NOT NULL,
-  `site_id` smallint(6) NOT NULL COMMENT '站点ID',
+  `site_id` smallint(6) NOT NULL COMMENT '站点',
   `name` varchar(100) NOT NULL COMMENT '名称',
   `multiple` tinyint(1) NOT NULL COMMENT '允许多选',
   PRIMARY KEY (`id`,`site_id`),
@@ -484,8 +506,8 @@ CREATE TABLE `log_visit` (
   `create_date` datetime NOT NULL COMMENT '创建日期',
   PRIMARY KEY (`id`),
   KEY `log_visit_visit_date` (`site_id`,`visit_date`,`visit_hour`),
-  KEY `log_visit_session_id` (`site_id`,`session_id`,`visit_date`,`create_date`,`ip`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COMMENT='访问日志';
+  KEY `log_visit_session_id` (`site_id`,`session_id`,`visit_date`,`create_date`,`ip`)
+) COMMENT='访问日志';
 
 -- ----------------------------
 -- Table structure for log_visit_day
@@ -517,104 +539,6 @@ CREATE TABLE `log_visit_session` (
   PRIMARY KEY (`site_id`,`session_id`,`visit_date`),
   KEY `log_visit_visit_date` (`site_id`,`visit_date`,`ip`)
 ) COMMENT = '访问会话';
--- ----------------------------
--- Table structure for trade_account
--- ----------------------------
-DROP TABLE IF EXISTS `trade_account`;
-CREATE TABLE `trade_account`  (
-  `id` bigint(20) NOT NULL COMMENT '用户ID',
-  `site_id` smallint(6) NOT NULL COMMENT '站点ID',
-  `amount` decimal(10, 2) NOT NULL COMMENT '金额',
-  `update_date` datetime NULL DEFAULT NULL COMMENT '更新日期',
-  PRIMARY KEY (`id`),
-  KEY `trade_account_site_id`(`site_id`, `update_date`)
-) COMMENT = '资金账户';
-
--- ----------------------------
--- Table structure for trade_account_history
--- ----------------------------
-DROP TABLE IF EXISTS `trade_account_history`;
-CREATE TABLE `trade_account_history` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `site_id` smallint(6) NOT NULL COMMENT '站点ID',
-  `serial_number` varchar(100) NOT NULL COMMENT '流水号',
-  `account_id` bigint(20) NOT NULL COMMENT '账户ID',
-  `user_id` bigint(20) DEFAULT NULL COMMENT '操作用户ID',
-  `amount_change` decimal(10,2) NOT NULL COMMENT '变动金额',
-  `amount` decimal(10,2) NOT NULL COMMENT '变动金额',
-  `balance` decimal(10,2) NOT NULL COMMENT '变动金额',
-  `status` int(11) NOT NULL COMMENT '类型:0预充值,1消费,2充值,3退款',
-  `description` varchar(255) DEFAULT NULL COMMENT '描述',
-  `create_date` datetime NOT NULL COMMENT '创建日期',
-  PRIMARY KEY (`id`),
-  KEY `trade_account_history_site_id` (`site_id`,`account_id`,`status`),
-  KEY `trade_account_history_create_date` (`create_date`)
-) COMMENT='账户流水';
--- ----------------------------
--- Table structure for trade_order
--- ----------------------------
-DROP TABLE IF EXISTS `trade_order`;
-CREATE TABLE `trade_order`  (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `site_id` smallint(6) NOT NULL COMMENT '站点',
-  `user_id` bigint(20) NOT NULL COMMENT '用户id',
-  `amount` decimal(10, 2) NOT NULL COMMENT '金额',
-  `description` varchar(255) NULL DEFAULT NULL COMMENT '描述',
-  `trade_type` varchar(20) NOT NULL COMMENT '订单类型',
-  `serial_number` varchar(100) NOT NULL COMMENT '订单流水',
-  `account_type` varchar(20) NOT NULL COMMENT '支付账户类型',
-  `account_serial_number` varchar(100) NULL DEFAULT NULL COMMENT '支付账号流水',
-  `ip` varchar(130) NOT NULL COMMENT 'IP地址',
-  `status` int(11) NOT NULL COMMENT '状态:0待支付,1已支付,2待退款,3退款成功',
-  `processed` tinyint(1) NOT NULL COMMENT '已处理',
-  `update_date` datetime DEFAULT NULL COMMENT '更新日期',
-  `create_date` datetime NOT NULL COMMENT '创建日期',
-  `process_date` datetime DEFAULT NULL COMMENT '处理日期',
-  `payment_date` datetime NULL DEFAULT NULL COMMENT '支付日期',
-  PRIMARY KEY (`id`),
-  KEY `trade_order_account_type`(`account_type`, `account_serial_number`),
-  KEY `trade_order_site_id`(`site_id`, `user_id`, `status`),
-  KEY `trade_order_trade_type`(`trade_type`, `serial_number`),
-  KEY `trade_order_create_date` (`create_date`)
-) COMMENT = '支付订单';
-
--- ----------------------------
--- Table structure for trade_order_history
--- ----------------------------
-DROP TABLE IF EXISTS `trade_order_history`;
-CREATE TABLE `trade_order_history`  (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `site_id` smallint(6) NOT NULL COMMENT '站点ID',
-  `order_id` bigint(20) NOT NULL COMMENT '订单ID',
-  `create_date` datetime NOT NULL COMMENT '创建日期',
-  `operate` varchar(100) NOT NULL COMMENT '操作',
-  `content` text COMMENT '内容',
-  PRIMARY KEY (`id`),
-  KEY `trade_order_history_site_id` (`site_id`,`order_id`,`operate`),
-  KEY `trade_order_history_create_date` (`create_date`)
-) COMMENT = '订单流水';
-
--- ----------------------------
--- Table structure for trade_refund
--- ----------------------------
-DROP TABLE IF EXISTS `trade_refund`;
-CREATE TABLE `trade_refund`  (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `order_id` bigint(20) NOT NULL COMMENT '订单ID',
-  `amount` decimal(10, 2) NOT NULL COMMENT '申请退款金额',
-  `reason` varchar(255) NULL DEFAULT NULL COMMENT '退款原因',
-  `update_date` datetime NULL DEFAULT NULL COMMENT '更新日期',
-  `refund_user_id` bigint(20) NULL DEFAULT NULL COMMENT '退款操作人员',
-  `refund_amount` decimal(10, 2) NULL DEFAULT NULL COMMENT '退款金额',
-  `status` int(11) NOT NULL COMMENT '状态:0待退款,1已退款,2取消退款,3拒绝退款,4退款失败',
-  `reply` varchar(255) NULL DEFAULT NULL COMMENT '回复',
-  `create_date` datetime NOT NULL COMMENT '创建日期',
-  `processing_date` datetime NULL DEFAULT NULL COMMENT '处理日期',
-  PRIMARY KEY (`id`),
-  KEY `trade_refund_order_id`(`order_id`, `status`),
-  KEY `trade_refund_create_date` (`create_date`)
-) COMMENT = '退款申请';
-
 -- ----------------------------
 -- Table structure for sys_app
 -- ----------------------------
@@ -836,9 +760,9 @@ CREATE TABLE `sys_module` (
 -- ----------------------------
 -- Records of sys_module
 -- ----------------------------
-INSERT INTO `sys_module` VALUES ('account_add', 'tradeAccount/add', 'tradeAccount/save', '', 'account_list', 0, 1);
-INSERT INTO `sys_module` VALUES ('account_history_list', 'tradeAccountHistory/list', 'sysUser/lookup', 'icon-book', 'trade_menu', 1, 5);
-INSERT INTO `sys_module` VALUES ('account_list', 'tradeAccount/list', NULL, 'icon-credit-card', 'trade_menu', 1, 4);
+INSERT INTO `sys_module` VALUES ('account_add', 'tradeAccount/add', 'tradeAccount/save,sysUser/lookup', '', 'account_list', 0, 1);
+INSERT INTO `sys_module` VALUES ('account_history_list', 'tradeAccountHistory/list', 'sysUser/lookup', 'icon-book', 'trade_menu', 1, 7);
+INSERT INTO `sys_module` VALUES ('account_list', 'tradeAccount/list', NULL, 'icon-credit-card', 'trade_menu', 1, 6);
 INSERT INTO `sys_module` VALUES ('account_recharge', 'tradeAccount/rechargeParameters', 'tradeAccount/recharge', '', 'account_list', 0, 2);
 INSERT INTO `sys_module` VALUES ('app_add', 'sysApp/add', 'sysApp/save', NULL, 'app_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('app_client_disable', NULL, 'sysAppClient/disable', NULL, 'app_client_list', 0, 0);
@@ -884,7 +808,7 @@ INSERT INTO `sys_module` VALUES ('content_move', 'cmsContent/moveParameters', 'c
 INSERT INTO `sys_module` VALUES ('content_publish', NULL, 'cmsContent/publish', '', 'content_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('content_push', 'cmsContent/push', 'cmsContent/push_content,cmsContent/push_content_list,cmsContent/push_to_content,cmsContent/push_page,cmsContent/push_page_list,cmsPlace/add,cmsPlace/save,cmsContent/related,cmsContent/unrelated,cmsPlace/delete,cmsPlace/push', '', 'content_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('content_recycle_delete', NULL, 'cmsContent/realDelete', NULL, 'content_recycle_list', 0, 0);
-INSERT INTO `sys_module` VALUES ('content_recycle_list', 'cmsRecycleContent/list', 'sysUser/lookup', 'icon-trash', 'content_menu', 1, 6);
+INSERT INTO `sys_module` VALUES ('content_recycle_list', 'cmsRecycleContent/list', 'sysUser/lookup', 'icon-trash', 'content_menu', 1, 7);
 INSERT INTO `sys_module` VALUES ('content_recycle_recycle', NULL, 'cmsContent/recycle', NULL, 'content_recycle_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('content_refresh', NULL, 'cmsContent/refresh', '', 'content_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('content_select_category', 'cmsCategory/lookupByModelId', NULL, NULL, 'content_add', 0, 0);
@@ -943,8 +867,11 @@ INSERT INTO `sys_module` VALUES ('myself_log_operate', 'myself/logOperate', NULL
 INSERT INTO `sys_module` VALUES ('myself_menu', NULL, NULL, 'icon-user', 'myself', 1, 0);
 INSERT INTO `sys_module` VALUES ('myself_password', 'myself/password', 'changePassword', 'icon-key', 'myself_menu', 1, 1);
 INSERT INTO `sys_module` VALUES ('myself_token', 'myself/userTokenList', 'sysUserToken/delete', 'icon-unlock-alt', 'myself_menu', 1, 5);
+INSERT INTO `sys_module` VALUES ('order_confirm', 'tradeOrder/confirmParameters', 'tradeOrder/confirm', NULL, 'order_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('order_history_list', 'tradeOrderHistory/list', NULL, 'icon-calendar', 'trade_menu', 1, 2);
 INSERT INTO `sys_module` VALUES ('order_list', 'tradeOrder/list', 'sysUser/lookup', 'icon-barcode', 'trade_menu', 1, 1);
+INSERT INTO `sys_module` VALUES ('order_process', 'tradeOrder/processParameters', 'tradeOrder/process', NULL, 'order_list', 0, 0);
+INSERT INTO `sys_module` VALUES ('order_view', 'tradeOrder/view', NULL, NULL, 'order_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('page', NULL, NULL, 'icon-tablet', NULL, 1, 3);
 INSERT INTO `sys_module` VALUES ('page_list', 'cmsPage/list', 'cmsPage/metadata,sysUser/lookup,cmsContent/lookup,cmsContent/lookup_list,cmsCategory/lookup', 'icon-globe', 'page_menu', 1, 1);
 INSERT INTO `sys_module` VALUES ('page_menu', NULL, NULL, 'icon-globe', 'page', 1, 0);
@@ -957,6 +884,8 @@ INSERT INTO `sys_module` VALUES ('page_select_content', 'cmsContent/lookup', 'cm
 INSERT INTO `sys_module` VALUES ('page_select_tag_type', 'cmsTagType/lookup', NULL, NULL, 'page_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('page_select_template', 'cmsTemplate/lookup', NULL, NULL, 'page_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('page_select_user', 'sysUser/lookup', NULL, NULL, 'page_list', 0, 0);
+INSERT INTO `sys_module` VALUES ('payment_history_list', 'tradePaymentHistory/list', 'tradePaymentHistory/view', 'icon-exchange', 'trade_menu', 1, 4);
+INSERT INTO `sys_module` VALUES ('payment_list', 'tradePayment/list', 'sysUser/lookup', 'icon-money', 'trade_menu', 1, 3);
 INSERT INTO `sys_module` VALUES ('place_add', 'cmsPlace/add', 'cmsContent/lookup,cmsPlace/lookup,cmsPlace/lookup_content_list,file/doUpload,cmsPlace/save', NULL, 'place_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('place_check', NULL, 'cmsPlace/check,cmsPlace/uncheck', NULL, 'place_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('place_clear', NULL, 'cmsPlace/clear', NULL, 'place_list', 0, 0);
@@ -974,8 +903,11 @@ INSERT INTO `sys_module` VALUES ('place_template_metadata', 'placeTemplate/metad
 INSERT INTO `sys_module` VALUES ('place_template_place', 'placeTemplate/lookup', NULL, NULL, 'place_template_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('place_template_webfile', 'cmsWebFile/lookup', NULL, NULL, 'place_template_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('place_view', 'cmsPlace/view', NULL, NULL, 'place_list', 0, 0);
-INSERT INTO `sys_module` VALUES ('refund_list', 'tradeRefund/list', 'sysUser/lookup', 'icon-signout', 'trade_menu', 1, 3);
-INSERT INTO `sys_module` VALUES ('refund_refund', 'tradeRefund/refundParameters', 'tradeRefund/refund', '', 'refund_list', 0, 1);
+INSERT INTO `sys_module` VALUES ('product_list', 'cmsContentProduct/list', NULL, 'icon-truck', 'content_menu', 1, 4);
+INSERT INTO `sys_module` VALUES ('product_add', 'cmsContentProduct/add', 'cmsContentProduct/save', NULL, 'product_list', 1, 0);
+INSERT INTO `sys_module` VALUES ('refund_list', 'tradeRefund/list', 'sysUser/lookup', 'icon-signout', 'trade_menu', 1, 5);
+INSERT INTO `sys_module` VALUES ('refund_refund', 'tradeRefund/refundParameters', 'tradeOrder/refund', '', 'refund_list', 0, 0);
+INSERT INTO `sys_module` VALUES ('refund_refuse', 'tradeRefund/refuseParameters', 'tradeOrder/refuse', '', 'refund_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('report_user', 'report/user', NULL, 'icon-male', 'user_menu', 1, 5);
 INSERT INTO `sys_module` VALUES ('role_add', 'sysRole/add', 'sysRole/save', NULL, 'role_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('role_delete', NULL, 'sysRole/delete', NULL, 'role_list', 0, 0);
@@ -994,12 +926,12 @@ INSERT INTO `sys_module` VALUES ('task_pause', NULL, 'sysTask/pause', NULL, 'tas
 INSERT INTO `sys_module` VALUES ('task_recreate', NULL, 'sysTask/recreate', NULL, 'task_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('task_resume', NULL, 'sysTask/resume', NULL, 'task_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('task_runonce', NULL, 'sysTask/runOnce', NULL, 'task_list', 0, 0);
-INSERT INTO `sys_module` VALUES ('task_template_content', 'taskTemplate/content', 'taskTemplate/save,taskTemplate/chipLookup,cmsTemplate/help,placeTemplate/form,cmsWebFile/contentForm', NULL, 'task_template_list', 0, 0);
+INSERT INTO `sys_module` VALUES ('task_template_content', 'taskTemplate/content', 'taskTemplate/save,taskTemplate/upload,taskTemplate/doUpload,taskTemplate/export,taskTemplate/chipLookup,cmsTemplate/help', NULL, 'task_template_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('task_template_delete', NULL, 'taskTemplate/delete', NULL, 'task_template_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('task_template_fragment', 'taskTemplate/chipLookup', NULL, NULL, 'task_template_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('task_template_help', 'cmsTemplate/help', NULL, NULL, 'task_template_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('task_template_list', 'taskTemplate/list', NULL, 'icon-time', 'file_menu', 1, 3);
-INSERT INTO `sys_module` VALUES ('template_content', 'cmsTemplate/content', 'cmsTemplate/save,cmsTemplate/chipLookup,cmsWebFile/lookup,placeTemplate/form,cmsWebFile/contentForm,cmsTemplate/demo,cmsTemplate/help,cmsTemplate/upload,cmsTemplate/doUpload', NULL, 'template_list', 0, 0);
+INSERT INTO `sys_module` VALUES ('template_content', 'cmsTemplate/content', 'cmsTemplate/save,cmsTemplate/chipLookup,cmsWebFile/lookup,placeTemplate/form,cmsTemplate/contentForm,cmsCategory/contributeForm,cmsTemplate/demo,cmsTemplate/help,cmsTemplate/upload,cmsTemplate/doUpload,cmsTemplate/export', NULL, 'template_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('template_content-type', 'cmsTemplate/contentTypeLookup', NULL, NULL, 'template_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('template_content_form', 'cmsTemplate/contentForm', NULL, NULL, 'template_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('template_data_dictionary', 'cmsDictionary/lookup', NULL, NULL, 'template_list', 0, 0);
@@ -1013,7 +945,7 @@ INSERT INTO `sys_module` VALUES ('template_place', 'placeTemplate/lookup', NULL,
 INSERT INTO `sys_module` VALUES ('template_place_form', 'placeTemplate/form', NULL, NULL, 'template_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('template_upload', 'cmsTemplate/upload', 'cmsTemplate/doUpload', NULL, 'template_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('template_website_file', 'cmsWebFile/lookup', NULL, NULL, 'template_list', 0, 0);
-INSERT INTO `sys_module` VALUES ('trade_menu', NULL, NULL, 'icon-money', 'maintenance', 0, 4);
+INSERT INTO `sys_module` VALUES ('trade_menu', NULL, NULL, 'icon-money', 'maintenance', 1, 4);
 INSERT INTO `sys_module` VALUES ('user_add', 'sysUser/add', 'sysDept/lookup,sysUser/save', NULL, 'user_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('user_disable', NULL, 'sysUser/disable', NULL, 'user_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('user_enable', NULL, 'sysUser/enable', NULL, 'user_list', 0, 0);
@@ -1025,19 +957,19 @@ INSERT INTO `sys_module` VALUES ('webfile_list', 'cmsWebFile/list', NULL, 'icon-
 INSERT INTO `sys_module` VALUES ('webfile_unzip', 'cmsWebFile/unzipParameters', 'cmsWebFile/unzip', NULL, 'webfile_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('webfile_upload', 'cmsWebFile/upload', 'cmsWebFile/doUpload,cmsWebFile/check', NULL, 'webfile_list', 0, 0);
 INSERT INTO `sys_module` VALUES ('webfile_zip', NULL, 'cmsWebFile/zip', NULL, 'webfile_list', 0, 0);
-INSERT INTO `sys_module` VALUES ('word_list', 'cmsWord/list', NULL, 'icon-search', 'content_menu', 1, 4);
+INSERT INTO `sys_module` VALUES ('word_list', 'cmsWord/list', NULL, 'icon-search', 'content_menu', 1, 6);
 
 -- ----------------------------
 -- Table structure for sys_module_lang
 -- ----------------------------
 DROP TABLE IF EXISTS `sys_module_lang`;
 CREATE TABLE `sys_module_lang`  (
-  `module_id` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '模块ID',
-  `lang` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '语言',
-  `value` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '值',
-  PRIMARY KEY (`module_id`, `lang`) USING BTREE,
-  INDEX `sys_module_lang_lang`(`lang`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '模块语言' ROW_FORMAT = Compact;
+  `module_id` varchar(30) NOT NULL COMMENT '模块ID',
+  `lang` varchar(20) NOT NULL COMMENT '语言',
+  `value` varchar(100) NULL DEFAULT NULL COMMENT '值',
+  PRIMARY KEY (`module_id`, `lang`),
+  INDEX `sys_module_lang_lang`(`lang`)
+) COMMENT = '模块语言';
 
 -- ----------------------------
 -- Records of sys_module_lang
@@ -1363,12 +1295,21 @@ INSERT INTO `sys_module_lang` VALUES ('myself_password', 'zh', '修改密码');
 INSERT INTO `sys_module_lang` VALUES ('myself_token', 'en', 'My login token');
 INSERT INTO `sys_module_lang` VALUES ('myself_token', 'ja', '私のログイン授権');
 INSERT INTO `sys_module_lang` VALUES ('myself_token', 'zh', '我的登录授权');
+INSERT INTO `sys_module_lang` VALUES ('order_confirm', 'en', 'Confirm order');
+INSERT INTO `sys_module_lang` VALUES ('order_confirm', 'ja', '注文の確認');
+INSERT INTO `sys_module_lang` VALUES ('order_confirm', 'zh', '确认订单');
 INSERT INTO `sys_module_lang` VALUES ('order_history_list', 'en', 'Order history');
 INSERT INTO `sys_module_lang` VALUES ('order_history_list', 'ja', 'オーダー履歴');
 INSERT INTO `sys_module_lang` VALUES ('order_history_list', 'zh', '订单历史');
 INSERT INTO `sys_module_lang` VALUES ('order_list', 'en', 'Order management');
 INSERT INTO `sys_module_lang` VALUES ('order_list', 'ja', 'オーダー管理');
 INSERT INTO `sys_module_lang` VALUES ('order_list', 'zh', '订单管理');
+INSERT INTO `sys_module_lang` VALUES ('order_process', 'en', 'Process order');
+INSERT INTO `sys_module_lang` VALUES ('order_process', 'ja', 'プロセスオーダー');
+INSERT INTO `sys_module_lang` VALUES ('order_process', 'zh', '处理订单');
+INSERT INTO `sys_module_lang` VALUES ('order_view', 'en', 'View');
+INSERT INTO `sys_module_lang` VALUES ('order_view', 'ja', '見る');
+INSERT INTO `sys_module_lang` VALUES ('order_view', 'zh', '查看');
 INSERT INTO `sys_module_lang` VALUES ('page', 'en', 'Page');
 INSERT INTO `sys_module_lang` VALUES ('page', 'ja', 'ページ');
 INSERT INTO `sys_module_lang` VALUES ('page', 'zh', '页面');
@@ -1405,6 +1346,12 @@ INSERT INTO `sys_module_lang` VALUES ('page_select_template', 'zh', '选择模�
 INSERT INTO `sys_module_lang` VALUES ('page_select_user', 'en', 'Select user');
 INSERT INTO `sys_module_lang` VALUES ('page_select_user', 'ja', 'ユーザーを選択');
 INSERT INTO `sys_module_lang` VALUES ('page_select_user', 'zh', '选择用户');
+INSERT INTO `sys_module_lang` VALUES ('payment_list', 'en', 'Payment management');
+INSERT INTO `sys_module_lang` VALUES ('payment_list', 'ja', '支払い管理');
+INSERT INTO `sys_module_lang` VALUES ('payment_list', 'zh', '支付管理');
+INSERT INTO `sys_module_lang` VALUES ('payment_history_list', 'en', 'Payment history');
+INSERT INTO `sys_module_lang` VALUES ('payment_history_list', 'ja', '支払歴');
+INSERT INTO `sys_module_lang` VALUES ('payment_history_list', 'zh', '支付历史');
 INSERT INTO `sys_module_lang` VALUES ('place_add', 'en', 'Add/edit');
 INSERT INTO `sys_module_lang` VALUES ('place_add', 'ja', '推奨ビットデータの追加/変更');
 INSERT INTO `sys_module_lang` VALUES ('place_add', 'zh', '增加/修改推荐位数据');
@@ -1456,12 +1403,21 @@ INSERT INTO `sys_module_lang` VALUES ('place_template_webfile', 'zh', '网站文
 INSERT INTO `sys_module_lang` VALUES ('place_view', 'en', 'View');
 INSERT INTO `sys_module_lang` VALUES ('place_view', 'ja', '推奨ビットデータを見る');
 INSERT INTO `sys_module_lang` VALUES ('place_view', 'zh', '查看推荐位数据');
+INSERT INTO `sys_module_lang` VALUES ('product_list', 'en', 'Product');
+INSERT INTO `sys_module_lang` VALUES ('product_list', 'ja', '製品');
+INSERT INTO `sys_module_lang` VALUES ('product_list', 'zh', '产品');
+INSERT INTO `sys_module_lang` VALUES ('product_add', 'en', 'Edit');
+INSERT INTO `sys_module_lang` VALUES ('product_add', 'ja', '変更');
+INSERT INTO `sys_module_lang` VALUES ('product_add', 'zh', '修改');
 INSERT INTO `sys_module_lang` VALUES ('refund_list', 'en', 'Refund management');
 INSERT INTO `sys_module_lang` VALUES ('refund_list', 'ja', '払い戻し管理');
 INSERT INTO `sys_module_lang` VALUES ('refund_list', 'zh', '退款管理');
 INSERT INTO `sys_module_lang` VALUES ('refund_refund', 'en', 'Refund');
 INSERT INTO `sys_module_lang` VALUES ('refund_refund', 'ja', '払い戻し');
 INSERT INTO `sys_module_lang` VALUES ('refund_refund', 'zh', '退款');
+INSERT INTO `sys_module_lang` VALUES ('refund_refuse', 'en', 'Refuse');
+INSERT INTO `sys_module_lang` VALUES ('refund_refuse', 'ja', 'ごみ');
+INSERT INTO `sys_module_lang` VALUES ('refund_refuse', 'zh', '拒绝');
 INSERT INTO `sys_module_lang` VALUES ('report_user', 'en', 'User report');
 INSERT INTO `sys_module_lang` VALUES ('report_user', 'ja', 'ユーザーデータの監視');
 INSERT INTO `sys_module_lang` VALUES ('report_user', 'zh', '用户数据监控');
@@ -1779,5 +1735,160 @@ CREATE TABLE `sys_user_token` (
 ) COMMENT='用户令牌';
 
 -- ----------------------------
--- Records of sys_user_token
+-- Table structure for trade_account
 -- ----------------------------
+DROP TABLE IF EXISTS `trade_account`;
+CREATE TABLE `trade_account`  (
+  `id` bigint(20) NOT NULL COMMENT '用户ID',
+  `site_id` smallint(6) NOT NULL COMMENT '站点ID',
+  `amount` decimal(10, 2) NOT NULL COMMENT '金额',
+  `update_date` datetime NULL DEFAULT NULL COMMENT '更新日期',
+  PRIMARY KEY (`id`),
+  KEY `trade_account_site_id`(`site_id`, `update_date`)
+) COMMENT = '资金账户';
+
+-- ----------------------------
+-- Table structure for trade_account_history
+-- ----------------------------
+DROP TABLE IF EXISTS `trade_account_history`;
+CREATE TABLE `trade_account_history` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
+  `site_id` smallint(6) NOT NULL COMMENT '站点ID',
+  `serial_number` varchar(100) NOT NULL COMMENT '流水号',
+  `account_id` bigint(20) NOT NULL COMMENT '账户ID',
+  `user_id` bigint(20) DEFAULT NULL COMMENT '操作用户ID',
+  `amount_change` decimal(10,2) NOT NULL COMMENT '变动金额',
+  `amount` decimal(10,2) NOT NULL COMMENT '变动金额',
+  `balance` decimal(10,2) NOT NULL COMMENT '变动金额',
+  `status` int(11) NOT NULL COMMENT '类型:0预充值,1消费,2充值,3退款',
+  `description` varchar(255) DEFAULT NULL COMMENT '描述',
+  `create_date` datetime NOT NULL COMMENT '创建日期',
+  PRIMARY KEY (`id`),
+  KEY `trade_account_history_site_id` (`site_id`,`account_id`,`status`),
+  KEY `trade_account_history_create_date` (`create_date`)
+) COMMENT='账户流水';
+-- ----------------------------
+-- Table structure for trade_payment
+-- ----------------------------
+DROP TABLE IF EXISTS `trade_payment`;
+CREATE TABLE `trade_payment`  (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
+  `site_id` smallint(6) NOT NULL COMMENT '站点',
+  `user_id` bigint(20) NOT NULL COMMENT '用户id',
+  `amount` decimal(10, 2) NOT NULL COMMENT '金额',
+  `description` varchar(255) NULL DEFAULT NULL COMMENT '描述',
+  `trade_type` varchar(20) NOT NULL COMMENT '订单类型',
+  `serial_number` varchar(100) NOT NULL COMMENT '订单流水',
+  `account_type` varchar(20) NOT NULL COMMENT '支付账户类型',
+  `account_serial_number` varchar(100) NULL DEFAULT NULL COMMENT '支付账号流水',
+  `ip` varchar(130) NOT NULL COMMENT 'IP地址',
+  `status` int(11) NOT NULL COMMENT '状态:0待支付,1已支付,2待退款,3已退款,4已关闭',
+  `processed` tinyint(1) NOT NULL COMMENT '已处理',
+  `process_user_id` bigint(20) NULL COMMENT '处理用户ID',
+  `update_date` datetime DEFAULT NULL COMMENT '更新日期',
+  `create_date` datetime NOT NULL COMMENT '创建日期',
+  `process_date` datetime DEFAULT NULL COMMENT '处理日期',
+  `payment_date` datetime NULL DEFAULT NULL COMMENT '支付日期',
+  PRIMARY KEY (`id`),
+  KEY `trade_payment_account_type`(`account_type`, `account_serial_number`),
+  KEY `trade_payment_site_id`(`site_id`, `user_id`, `status`),
+  KEY `trade_payment_trade_type`(`trade_type`, `serial_number`),
+  KEY `trade_payment_create_date` (`create_date`)
+) COMMENT = '支付订单';
+
+-- ----------------------------
+-- Table structure for trade_payment_history
+-- ----------------------------
+DROP TABLE IF EXISTS `trade_payment_history`;
+CREATE TABLE `trade_payment_history`  (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
+  `site_id` smallint(6) NOT NULL COMMENT '站点ID',
+  `payment_id` bigint(20) NOT NULL COMMENT '订单ID',
+  `create_date` datetime NOT NULL COMMENT '创建日期',
+  `operate` varchar(100) NOT NULL COMMENT '操作',
+  `content` text COMMENT '内容',
+  PRIMARY KEY (`id`),
+  KEY `trade_payment_history_site_id` (`site_id`,`payment_id`,`operate`),
+  KEY `trade_payment_history_create_date` (`create_date`)
+) COMMENT = '支付订单流水';
+-- ----------------------------
+-- Table structure for trade_order
+-- ----------------------------
+CREATE TABLE `trade_order` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
+  `site_id` smallint(6) NOT NULL COMMENT '站点',
+  `user_id` bigint(20) NOT NULL COMMENT '用户id',
+  `title` varchar(255) NOT NULL COMMENT '标题',
+  `amount` decimal(10,2) NOT NULL COMMENT '总金额',
+  `payment_id` bigint(20) DEFAULT NULL COMMENT '支付订单ID',
+  `address` varchar(255) DEFAULT NULL COMMENT '地址',
+  `addressee` varchar(100) DEFAULT NULL COMMENT '收件人',
+  `telephone` varchar(100) DEFAULT NULL COMMENT '电话',
+  `ip` varchar(130) NOT NULL COMMENT 'IP地址',
+  `remark` varchar(255) DEFAULT NULL COMMENT '备注',
+  `status` int(11) NOT NULL COMMENT '状态:0待确认,1无效订单,2已付款,3已退款,4已关闭',
+  `confirmed` tinyint(1) NOT NULL COMMENT '已确认',
+  `processed` tinyint(1) NOT NULL COMMENT '已处理',
+  `user_id` bigint(20) NULL COMMENT '处理用户ID',
+  `process_info` varchar(255) DEFAULT NULL COMMENT '处理信息',
+  `update_date` datetime DEFAULT NULL COMMENT '更新日期',
+  `create_date` datetime NOT NULL COMMENT '创建日期',
+  `process_date` datetime DEFAULT NULL COMMENT '处理日期',
+  `payment_date` datetime DEFAULT NULL COMMENT '支付日期',
+  PRIMARY KEY (`id`),
+  KEY `trade_order_site_id` (`site_id`,`user_id`,`status`),
+  KEY `trade_order_create_date` (`create_date`),
+  KEY `trade_order_payment_id` (`site_id`,`payment_id`)
+) COMMENT='产品订单';
+-- ----------------------------
+-- Table structure for trade_order_history
+-- ----------------------------
+CREATE TABLE `trade_order_history` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
+  `site_id` smallint(6) NOT NULL COMMENT '站点',
+  `order_id` bigint(20) NOT NULL COMMENT '订单ID',
+  `create_date` datetime NOT NULL COMMENT '创建日期',
+  `operate` varchar(100) NOT NULL COMMENT '操作',
+  `content` text COMMENT '内容',
+  PRIMARY KEY (`id`),
+  KEY `trade_order_history_site_id` (`site_id`,`order_id`,`operate`),
+  KEY `trade_order_history_create_date` (`create_date`)
+) COMMENT='订单流水';
+-- ----------------------------
+-- Table structure for trade_order_product
+-- ----------------------------
+CREATE TABLE `trade_order_product` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
+  `site_id` smallint(6) NOT NULL COMMENT '站点',
+  `order_id` bigint(20) NOT NULL COMMENT '用户id',
+  `content_id` bigint(20) NOT NULL COMMENT '内容ID',
+  `product_id` bigint(20) NOT NULL COMMENT '产品ID',
+  `price` decimal(10,2) NOT NULL COMMENT '价格',
+  `quantity` int(11) NOT NULL COMMENT '数量',
+  `amount` decimal(10,2) NOT NULL COMMENT '总金额',
+  `remark` varchar(255) DEFAULT NULL COMMENT '备注',
+  PRIMARY KEY (`id`),
+  KEY `trade_order_product_site_id` (`site_id`,`order_id`)
+) COMMENT='产品订单';
+-- ----------------------------
+-- Table structure for trade_refund
+-- ----------------------------
+DROP TABLE IF EXISTS `trade_refund`;
+CREATE TABLE `trade_refund` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
+  `site_id` smallint(0) NOT NULL COMMENT '站点',
+  `payment_id` bigint(20) NOT NULL COMMENT '订单ID',
+  `user_id` bigint(20) NOT NULL COMMENT '用户ID',
+  `amount` decimal(10,2) NOT NULL COMMENT '申请退款金额',
+  `reason` varchar(255) DEFAULT NULL COMMENT '退款原因',
+  `update_date` datetime DEFAULT NULL COMMENT '更新日期',
+  `refund_user_id` bigint(20) DEFAULT NULL COMMENT '退款操作人员',
+  `refund_amount` decimal(10,2) DEFAULT NULL COMMENT '退款金额',
+  `status` int(11) NOT NULL COMMENT '状态:0待退款,1已退款,2取消退款,3拒绝退款,4退款失败',
+  `reply` varchar(255) DEFAULT NULL COMMENT '回复',
+  `create_date` datetime NOT NULL COMMENT '创建日期',
+  `processing_date` datetime DEFAULT NULL COMMENT '处理日期',
+  PRIMARY KEY (`id`),
+  KEY `trade_refund_create_date` (`create_date`),
+  KEY `trade_refund_user_id` (`user_id`,`payment_id`,`status`)
+) COMMENT='退款申请';
