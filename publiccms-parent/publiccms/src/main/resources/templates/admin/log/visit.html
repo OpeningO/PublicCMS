@@ -19,7 +19,7 @@
             <div class="subBar">
                 <ul>
                     <li>
-                    	<button type="submit" class="buttonActive"><@t.page 'button.search'/></button>
+                        <button type="submit" class="buttonActive"><@t.page 'button.search'/></button>
                     </li>
                 </ul>
             </div>
@@ -55,7 +55,7 @@
                         <p><a href="${a.url}" target="_blank">${a.url!}</a></p>
                     </div>
                 </td>
-                <td>
+                <td class="exclude-translate">
                     <div class="box">
                     <@_userAgent userAgent=a.userAgent>
                         <p>${object.browserType!}:${object.browserGroup!} ${object.browserVersion!}</p>

@@ -89,8 +89,7 @@ public class ApplicationConfig {
      */
     @Bean
     public HibernateTransactionManager hibernateTransactionManager(SessionFactory sessionFactory) {
-        HibernateTransactionManager bean = new HibernateTransactionManager();
-        bean.setSessionFactory(sessionFactory);
+        HibernateTransactionManager bean = new HibernateTransactionManager(sessionFactory);
         return bean;
     }
 
@@ -133,7 +132,7 @@ public class ApplicationConfig {
         if (properties.containsKey(cacheConfigUri)) {
             properties.setProperty(cacheConfigUri, getClass().getResource(properties.getProperty(cacheConfigUri)).toString());
         }
-        properties.setProperty("hibernate.search.default.indexBase", getDirPath("/indexes/"));
+        properties.setProperty("hibernate.search.backend.directory.root", getDirPath("/indexes/"));
         MultiTokenizerFactory.init(env.getProperty("cms.tokenizerFactory"),
                 getMap(env.getProperty("cms.tokenizerFactory.parameters")));
 
@@ -197,7 +196,7 @@ public class ApplicationConfig {
         bean.setRootPath(getDirPath(CommonConstants.BLANK));
         bean.setMasterSiteIds(env.getProperty("cms.masterSiteIds"));
         bean.setDefaultSiteId(Short.parseShort(env.getProperty("cms.defaultSiteId")));
-        if ("hmmchinese".equalsIgnoreCase(env.getProperty("cms.tokenizerFactory"))) {
+        if ("hmmChinese".equalsIgnoreCase(env.getProperty("cms.tokenizerFactory"))) {
             String dictDirPath = getDirPath(AnalyzerDictUtils.DIR_DICT);
             File dictDir = new File(dictDirPath);
             if (dictDir.exists() && dictDir.isDirectory()) {

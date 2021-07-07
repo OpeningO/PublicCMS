@@ -11,7 +11,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletionStage;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.publiccms.common.api.Config;
 import com.publiccms.common.base.BaseService;
+import com.publiccms.common.base.HighLighterQuery;
 import com.publiccms.common.constants.CommonConstants;
 import com.publiccms.common.handler.FacetPageHandler;
 import com.publiccms.common.handler.PageHandler;
@@ -32,7 +33,6 @@ import com.publiccms.entities.cms.CmsContent;
 import com.publiccms.entities.cms.CmsContentAttribute;
 import com.publiccms.entities.sys.SysExtendField;
 import com.publiccms.entities.sys.SysUser;
-import com.publiccms.logic.dao.cms.CmsCategoryDao;
 import com.publiccms.logic.dao.cms.CmsContentDao;
 import com.publiccms.logic.service.sys.SysExtendFieldService;
 import com.publiccms.logic.service.sys.SysExtendService;
@@ -49,18 +49,6 @@ import com.publiccms.views.pojo.query.CmsContentQuery;
 @Service
 @Transactional
 public class CmsContentService extends BaseService<CmsContent> {
-    @Autowired
-    private SysExtendService extendService;
-    @Autowired
-    private SysExtendFieldService extendFieldService;
-    @Autowired
-    private CmsTagService tagService;
-    @Autowired
-    private CmsContentFileService contentFileService;
-    @Autowired
-    private CmsContentAttributeService attributeService;
-    @Autowired
-    private CmsContentRelatedService cmsContentRelatedService;
     private static String[] DICTIONARY_INPUT_TYPES = { Config.INPUTTYPE_NUMBER, Config.INPUTTYPE_BOOLEAN, Config.INPUTTYPE_USER,
             Config.INPUTTYPE_CONTENT, Config.INPUTTYPE_CATEGORY, Config.INPUTTYPE_DICTIONARY, Config.INPUTTYPE_CATEGORYTYPE,
             Config.INPUTTYPE_TAGTYPE };
@@ -89,10 +77,10 @@ public class CmsContentService extends BaseService<CmsContent> {
     public static final Integer[] STATUS_NORMAL_ARRAY = new Integer[] { STATUS_NORMAL };
 
     /**
+     * @param siteId
      * @param projection
      * @param phrase
-     * @param highlight
-     * @param siteId
+     * @param highLighterQuery
      * @param categoryId
      * @param containChild
      * @param categoryIds
@@ -101,8 +89,6 @@ public class CmsContentService extends BaseService<CmsContent> {
      * @param fields
      * @param tagIds
      * @param dictionaryValues
-     * @param preTag
-     * @param postTag
      * @param startPublishDate
      * @param endPublishDate
      * @param expiryDate
@@ -112,20 +98,20 @@ public class CmsContentService extends BaseService<CmsContent> {
      * @return results page
      */
     @Transactional(readOnly = true)
-    public PageHandler query(boolean projection, boolean phrase, boolean highlight, Short siteId, String text, String[] fields,
-            Long[] tagIds, Integer categoryId, Boolean containChild, Integer[] categoryIds, String[] modelIds,
-            String[] dictionaryValues, String preTag, String postTag, Date startPublishDate, Date endPublishDate, Date expiryDate,
-            String orderField, Integer pageIndex, Integer pageSize) {
-        return dao.query(projection, phrase, highlight, siteId, getCategoryIds(containChild, categoryId, categoryIds), modelIds,
-                text, fields, arrayToDelimitedString(tagIds, CommonConstants.BLANK_SPACE), dictionaryValues, preTag, postTag,
+    public PageHandler query(Short siteId, boolean projection, boolean phrase, HighLighterQuery highLighterQuery, String text,
+            String[] fields, Long[] tagIds, Integer categoryId, Boolean containChild, Integer[] categoryIds, String[] modelIds,
+            String[] dictionaryValues, Date startPublishDate, Date endPublishDate, Date expiryDate, String orderField,
+            Integer pageIndex, Integer pageSize) {
+        return dao.query(siteId, projection, phrase, highLighterQuery, getCategoryIds(containChild, categoryId, categoryIds),
+                modelIds, text, fields, arrayToDelimitedString(tagIds, CommonConstants.BLANK_SPACE), dictionaryValues,
                 startPublishDate, endPublishDate, expiryDate, orderField, pageIndex, pageSize);
     }
 
     /**
+     * @param siteId
      * @param projection
      * @param phrase
-     * @param highlight
-     * @param siteId
+     * @param highLighterQuery
      * @param categoryIds
      * @param modelIds
      * @param text
@@ -135,21 +121,18 @@ public class CmsContentService extends BaseService<CmsContent> {
      * @param startPublishDate
      * @param endPublishDate
      * @param expiryDate
-     * @param preTag
-     * @param postTag
      * @param orderField
      * @param pageIndex
      * @param pageSize
      * @return results page
      */
     @Transactional(readOnly = true)
-    public FacetPageHandler facetQuery(boolean projection, boolean phrase, boolean highlight, Short siteId, String text,
-            String[] fields, Long[] tagIds, Integer[] categoryIds, String[] modelIds, String[] dictionaryValues, String preTag,
-            String postTag, Date startPublishDate, Date endPublishDate, Date expiryDate, String orderField, Integer pageIndex,
-            Integer pageSize) {
-        return dao.facetQuery(projection, phrase, highlight, siteId, categoryIds, modelIds, text, fields,
-                arrayToDelimitedString(tagIds, CommonConstants.BLANK_SPACE), dictionaryValues, preTag, postTag, startPublishDate,
-                endPublishDate, expiryDate, orderField, pageIndex, pageSize);
+    public FacetPageHandler facetQuery(Short siteId, boolean projection, boolean phrase, HighLighterQuery highLighterQuery,
+            String text, String[] fields, Long[] tagIds, Integer[] categoryIds, String[] modelIds, String[] dictionaryValues,
+            Date startPublishDate, Date endPublishDate, Date expiryDate, String orderField, Integer pageIndex, Integer pageSize) {
+        return dao.facetQuery(siteId, projection, phrase, highLighterQuery, categoryIds, modelIds, text, fields,
+                arrayToDelimitedString(tagIds, CommonConstants.BLANK_SPACE), dictionaryValues, startPublishDate, endPublishDate,
+                expiryDate, orderField, pageIndex, pageSize);
     }
 
     /**
@@ -163,7 +146,7 @@ public class CmsContentService extends BaseService<CmsContent> {
     /**
      * @return results page
      */
-    public Future<?> reCreateIndex() {
+    public CompletionStage<?> reCreateIndex() {
         return dao.reCreateIndex();
     }
 
@@ -189,11 +172,11 @@ public class CmsContentService extends BaseService<CmsContent> {
      * @return results list
      */
     @Transactional(readOnly = true)
-    public List<CmsContent> getListByQuoteId(Short siteId, Long quoteId) {
+    public List<CmsContent> getListByQuoteId(short siteId, Long quoteId) {
         return dao.getListByQuoteId(siteId, quoteId);
     }
 
-    public CmsContent saveTagAndAttribute(Short siteId, Long userId, Long id, CmsContentParameters contentParameters,
+    public CmsContent saveTagAndAttribute(short siteId, Long userId, Long id, CmsContentParameters contentParameters,
             CmsModel cmsModel, Integer extendId, CmsContentAttribute attribute) {
         CmsContent entity = getEntity(id);
         if (null != entity) {
@@ -202,6 +185,9 @@ public class CmsContentService extends BaseService<CmsContent> {
             if (entity.isHasImages() || entity.isHasFiles()) {
                 contentFileService.update(entity.getId(), userId, entity.isHasFiles() ? contentParameters.getFiles() : null,
                         entity.isHasImages() ? contentParameters.getImages() : null);// 更新保存图集，附件
+            }
+            if (entity.isHasProducts()) {
+                contentProductService.update(siteId, entity.getId(), userId, contentParameters.getProducts());
             }
             String text = HtmlUtils.removeHtmlTag(attribute.getText());
             if (null != text) {
@@ -315,7 +301,7 @@ public class CmsContentService extends BaseService<CmsContent> {
     /**
      * @param siteId
      * @param user
-     * @param id 
+     * @param id
      * @return result
      */
     public CmsContent check(short siteId, SysUser user, Serializable id) {
@@ -404,8 +390,8 @@ public class CmsContentService extends BaseService<CmsContent> {
                 if (null != c && !category.getId().equals(c.getId())) {
                     CmsContent quote = new CmsContent(entity.getSiteId(), entity.getTitle(), entity.getUserId(), c.getId(),
                             entity.getModelId(), entity.isCopied(), true, entity.isHasImages(), entity.isHasFiles(),
-                            entity.isHasStatic(), 0, 0, 0, 0, entity.getPublishDate(), entity.getCreateDate(), 0,
-                            entity.getStatus(), false);
+                            entity.isHasProducts(), entity.isHasStatic(), 0, 0, 0, 0, entity.getPublishDate(),
+                            entity.getCreateDate(), 0, entity.getStatus(), false);
                     quote.setUrl(entity.getUrl());
                     quote.setDescription(entity.getDescription());
                     quote.setAuthor(entity.getAuthor());
@@ -593,7 +579,7 @@ public class CmsContentService extends BaseService<CmsContent> {
         if (CommonUtils.empty(categoryId)) {
             return categoryIds;
         } else if (null != containChild && containChild) {
-            CmsCategory category = categoryDao.getEntity(categoryId);
+            CmsCategory category = categoryService.getEntity(categoryId);
             if (null != category) {
                 String[] categoryStringIds = ArrayUtils.add(
                         StringUtils.splitByWholeSeparator(category.getChildIds(), CommonConstants.COMMA_DELIMITED),
@@ -646,5 +632,19 @@ public class CmsContentService extends BaseService<CmsContent> {
     @Autowired
     private CmsContentDao dao;
     @Autowired
-    private CmsCategoryDao categoryDao;
+    private CmsCategoryService categoryService;
+    @Autowired
+    private SysExtendService extendService;
+    @Autowired
+    private SysExtendFieldService extendFieldService;
+    @Autowired
+    private CmsTagService tagService;
+    @Autowired
+    private CmsContentFileService contentFileService;
+    @Autowired
+    private CmsContentProductService contentProductService;
+    @Autowired
+    private CmsContentAttributeService attributeService;
+    @Autowired
+    private CmsContentRelatedService cmsContentRelatedService;
 }

@@ -57,6 +57,7 @@ public class CmsContentListDirective extends AbstractTemplateDirective {
         queryEntity.setOnlyUrl(handler.getBoolean("onlyUrl"));
         queryEntity.setHasImages(handler.getBoolean("hasImages"));
         queryEntity.setHasFiles(handler.getBoolean("hasFiles"));
+        queryEntity.setHasProducts(handler.getBoolean("hasProducts"));
         queryEntity.setHasCover(handler.getBoolean("hasCover"));
         queryEntity.setUserId(handler.getLong("userId"));
         queryEntity.setStartPublishDate(handler.getDate("startPublishDate"));
@@ -67,11 +68,15 @@ public class CmsContentListDirective extends AbstractTemplateDirective {
         List<CmsContent> list = (List<CmsContent>) page.getList();
         if (null != list) {
             boolean absoluteURL = handler.getBoolean("absoluteURL", true);
+            boolean absoluteId = handler.getBoolean("absoluteId", true);
             list.forEach(e -> {
                 CmsContentStatistics statistics = statisticsComponent.getContentStatistics(e.getId());
                 if (null != statistics) {
                     e.setClicks(e.getClicks() + statistics.getClicks());
                     e.setScores(e.getScores() + statistics.getScores());
+                }
+                if (absoluteId &&null != e.getQuoteContentId()) {
+                    e.setId(e.getQuoteContentId());
                 }
                 if (absoluteURL) {
                     templateComponent.initContentUrl(site, e);

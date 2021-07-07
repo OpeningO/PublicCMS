@@ -52,12 +52,11 @@ public class LogVisitDao extends BaseDao<LogVisit> {
         if (!ORDERTYPE_ASC.equalsIgnoreCase(orderType)) {
             orderType = ORDERTYPE_DESC;
         }
-        queryHandler.order("bean.createDate " + orderType);
+        queryHandler.order("bean.createDate ").append(orderType);
         return getPage(queryHandler, pageIndex, pageSize);
     }
 
     /**
-     * @param sessionId
      * @param visitDate
      * @param visitHour
      * @return results page
